@@ -13,12 +13,13 @@ export default function AllClasesPrueba({ onClickEvent, setView, setSelectedUser
   useEffect(() => {
     async function getProgramas() {
       const data = await fetchClases();
-      const filteredProgramas = data.filter(programa =>
+      /*const filteredProgramas = data.filter(programa =>
         !programasAlumno.some(alumnoPrograma =>
           alumnoPrograma.id_programa === programa.id_programa
         )
       );
-      setProgramas(filteredProgramas);
+      setProgramas(filteredProgramas);*/
+      setProgramas(data);
     }
     getProgramas();
   }, [title, programasAlumno]);
