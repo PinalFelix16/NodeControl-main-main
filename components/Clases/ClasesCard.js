@@ -22,24 +22,26 @@ export default function ClasesCard({
               <h5 className="text-blueGray-400 uppercase font-bold text-xs">
                 {statSubtitle}
               </h5>
-              {statSchedule?.map(item=>{
-                return (
-                    <>
-                <span className="normal-case  font-semibold text-lg text-blueGray-700">
-                    {item.nombre} : 
-                </span> 
-                <span className="text-lg text-blueGray-700">
-                     {item.informacion}
-                </span> 
-                <span className="font-semibold text-lg text-blueGray-700">
-                    / {item.nombre_maestro}
-                </span>
-                <br></br>
-                </>  
-                )
-              })
+              {Array.isArray(statSchedule) 
+  ? statSchedule.map((item, i) => (
+      <React.Fragment key={i}>
+        <span className="normal-case font-semibold text-lg text-blueGray-700">
+          {item.nombre} : 
+        </span> 
+        <span className="text-lg text-blueGray-700">
+          {item.informacion}
+        </span> 
+        <span className="font-semibold text-lg text-blueGray-700">
+          / {item.nombre_maestro}
+        </span>
+        <br/>
+      </React.Fragment>
+    ))
+  : null
+}
 
-              }
+
+            
              
             </div>
           </div>

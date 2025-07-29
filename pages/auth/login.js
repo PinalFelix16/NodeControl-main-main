@@ -15,23 +15,41 @@ export default function Login() {
   const [password, setPassword] = useState('');
   
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Email:", email);
-    console.log("Password:", password);
-    const result = await login({
-        "usuario": email,
-        "password":password
-    })
-    console.log(result);
-    if (result.message) {
-      localStorage.setItem('user_id', result.user_id);
-      localStorage.setItem('user_type', result.user_type);
-      router.push('/administrador/programas2');
-    }
-    else alert("Error credenciales incorrectas.");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  console.log("Email:", email);
+  console.log("Password:", password);
 
-  };
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password
+      })
+    });
+
+    const result = await response.json();
+    console.log(result);
+
+    if (result.success) {
+      localStorage.setItem("user_id", result.user_id);
+      localStorage.setItem("user_type", result.user_type);
+      alert(`Bienvenido ${result.name} (${result.rol})`);
+      router.push("/administrador/programas2");
+    } else {
+      alert("Credenciales incorrectas");
+    }
+  } catch (error) {
+    console.error("Error en login:", error);
+    alert("Error de conexión con el servidor");
+  }
+};
+
   return (
     <>
     
