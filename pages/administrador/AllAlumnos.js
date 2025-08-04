@@ -1,63 +1,135 @@
-import React, { useEffect, useState } from "react"; // Importa React y los hooks useEffect y useState
+"use client";
 
-// Importa componentes
+import React, { useEffect, useState } from "react";
+import Swal from "sweetalert2";
+
 import AlumnosTable from "components/Alumnos/AlumnosTable";
+import Admin from "layouts/Admin.js";
+import { fetchAlumnosStatus } from "services/api/alumnos";
 
-// Layout para la página
-import Admin from "layouts/Admin.js"; // Importa el layout de administrador
+export default function AllAlumnos({ setView, setSelectedUser }) {
+  const [alumnos, setAlumnos] = useState([]);
+  const [status, setStatus] = useState(1); // 1 = Activos, 0 = Inactivos
+  const [searchText, setSearchText] = useState("");
+  const [fetchedAlumnos, setFetchedAlumnos] = useState([]);
+  const [selectedUser, setSelectedUserState] = useState(null);
 
-import { fetchAlumnosStatus } from "services/api/alumnos"; // Importa la función para obtener el estado de los alumnos
-import Modal from "components/Alumnos/modals/AddUserModal"; // Importa el componente Modal
+  const [highlightId, setHighlightId] = useState(null); // 🔹 Alumno resaltado
 
-// Componente principal AllAlumnos
-export default function AllAlumnos({ setView, setSelectedUser, handleDelete, title }) {
-  const [alumnos, setAlumnos] = useState([]); // Estado para almacenar los alumnos
-  const [status, setStatus] = useState(1); // Estado para almacenar el status actual
-  const [searchText, setSearchText] = useState(""); // Estado para almacenar el texto de búsqueda
-  const [fetchedAlumnos, setFetchedAlumnos] = useState([]); // Estado para almacenar los alumnos obtenidos
-
-  // useEffect para obtener los alumnos basado en el status
-  useEffect(() => {
-    async function getAlumnos() {
-      if (title !== "") return 1; // Si hay un título, retorna inmediatamente (posible lógica de control)
-      const data = await fetchAlumnosStatus(status); // Llama a la API para obtener los alumnos según el status
-      setAlumnos(data); // Actualiza el estado de alumnos con los datos obtenidos
-      setFetchedAlumnos(data); // Actualiza el estado de alumnos obtenidos con los datos obtenidos
+  // 🔹 Obtener alumnos
+  const getAlumnos = async (newStatus = status) => {
+    try {
+      const data = await fetchAlumnosStatus(newStatus);
+      setAlumnos(data);
+      setFetchedAlumnos(data);
+    } catch (err) {
+      console.error("Error al obtener alumnos:", err);
+      setAlumnos([]);
     }
+  };
 
-    getAlumnos(); // Llama a la función para obtener los alumnos
-  }, [status, title]); // Dependencias: se ejecutará cuando cambie el status o el título
-
-  // useEffect para filtrar los alumnos basado en el texto de búsqueda
   useEffect(() => {
-    const filteredAlumnos = fetchedAlumnos.filter(alumno =>
-      alumno.nombre.toLowerCase().includes(searchText.toLowerCase()) || 
-      alumno.id_alumno.toLowerCase().includes(searchText.toLowerCase())
-    ); // Filtra los alumnos por nombre o ID que coincidan con el texto de búsqueda
-    setAlumnos(filteredAlumnos); // Actualiza el estado de alumnos con los alumnos filtrados
-  }, [searchText, fetchedAlumnos]); // Dependencias: se ejecutará cuando cambie el texto de búsqueda o los alumnos obtenidos
+    getAlumnos(status);
+  }, [status]);
+
+  // 🔹 Filtrar alumnos por búsqueda
+  useEffect(() => {
+    const filtered = fetchedAlumnos.filter(
+      (alumno) =>
+        alumno.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
+        alumno.id?.toString().includes(searchText)
+    );
+    setAlumnos(filtered);
+  }, [searchText, fetchedAlumnos]);
+
+  // 🔹 Maneja Alta/Baja con SweetAlert2 y resaltado temporal
+  const handleDelete = async (accion) => {
+    if (!selectedUser) return;
+
+    const result = await Swal.fire({
+      title: `¿Confirmar ${accion}?`,
+      text: `¿Seguro que deseas dar de ${accion.toLowerCase()} a este alumno?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: `Sí, ${accion}`,
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const url = `http://localhost:8000/api/alumnos/${selectedUser}/${accion.toLowerCase()}`;
+      const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error(`Error en la solicitud: ${response.status}`);
+      const data = await response.json();
+
+      // 🔹 Mensaje de éxito
+      Swal.fire({
+        icon: "success",
+        title: "¡Hecho!",
+        text: data.message || `Alumno ${accion.toLowerCase()} correctamente`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // 🔹 Cambiar de pestaña automáticamente
+      if (accion === "Baja" && status === 1) {
+        setStatus(0); // Cambiar a inactivos
+        await getAlumnos(0);
+        setHighlightId(selectedUser); // Alumno resaltado en rojo
+      } else if (accion === "Alta" && status === 0) {
+        setStatus(1); // Cambiar a activos
+        await getAlumnos(1);
+        setHighlightId(selectedUser); // Alumno resaltado en verde
+      } else {
+        // Solo quitar de la lista si no cambia de pestaña
+        const updatedAlumnos = alumnos.filter((alumno) => alumno.id !== selectedUser);
+        setAlumnos(updatedAlumnos);
+      }
+
+      // 🔹 Quitar resaltado después de 3 segundos
+      setTimeout(() => setHighlightId(null), 3000);
+
+    } catch (error) {
+      console.error(error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Hubo un problema al actualizar el alumno.",
+      });
+    }
+  };
 
   return (
-    <>
-      <div className="flex flex-wrap mt-4">
-        <div className="w-full mb-12 px-4"> 
-          {/* Componente AlumnosTable con las propiedades necesarias */}
-          <AlumnosTable 
-            color="dark" 
-            searchText={searchText} 
-            setSearchText={setSearchText} 
-            alumnos={alumnos} 
-            handleDelete={handleDelete} 
-            status={status} 
-            setStatus={setStatus} 
-            setView={setView} 
-            setSelectedUser={setSelectedUser} 
-          />
-        </div>
+    <div className="flex flex-wrap mt-4">
+      <div className="w-full mb-12 px-4">
+        <AlumnosTable
+          color="dark"
+          searchText={searchText}
+          setSearchText={setSearchText}
+          alumnos={alumnos}
+          handleDelete={handleDelete}
+          status={status}
+          setStatus={setStatus}
+          setView={setView}
+          setSelectedUser={(id) => {
+            setSelectedUserState(id);
+            setSelectedUser(id);
+          }}
+          highlightId={highlightId} // 🔹 Pasamos ID para resaltar
+        />
       </div>
-    </>
+    </div>
   );
 }
 
-// Asigna el layout de administrador al componente AllAlumnos
 AllAlumnos.layout = Admin;
