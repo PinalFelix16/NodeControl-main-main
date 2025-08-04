@@ -1,12 +1,27 @@
+const BASE = process.env.NEXT_PUBLIC_API_URL
 
+/**
+ * Obtiene los alumnos filtrados por status (0 inactivos, 1 activos)
+ * @param {0|1} status
+ */
+export async function fetchAlumnosStatus(status) {
+  const url = `${BASE}/alumnos/datos-combinados?status=${status}`
 
-  export async function fetchAlumnosStatus(status) {
-    const res = await fetch(`http://localhost:8000/api/alumnos/datos-combinados?status=${status}`);
-    if (!res.ok) {
-      throw new Error('Error fetching data');
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
     }
-    return res.json();
+  })
+
+  if (!res.ok) {
+    // Incluye el código de estado para facilitar el debug
+    throw new Error(`Error fetching alumnos (HTTP ${res.status})`)
   }
+
+  return await res.json()
+}
+
 
   export async function storeAlumno(formData) {
     const response = await fetch("http://localhost:8000/api/alumnos", {

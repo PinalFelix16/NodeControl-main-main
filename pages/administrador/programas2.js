@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
+import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";
 import { bajaAlumno, altaAlumno } from "services/api/alumnos";
 import Modal from "components/Alumnos/modals/AddUserModal";
@@ -6,12 +7,19 @@ import AllClasesPrueba from "./AllClasesPrueba";
 import AddProgramas from "./programas/AddProgramas";
 import EditProgramas from "./programas/EditProgramas.js";
 
-
 export default function Programas2() {
   const [view, setView] = useState('Table'); 
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    // Revisa si hay token en localStorage (usuario autenticado)
+    if (!localStorage.getItem("token")) {
+      router.replace("/auth/login"); // Cambia a tu ruta real si es necesario
+    }
+  }, []);
 
   const handleDelete = (action) => {
     setTitle(action);

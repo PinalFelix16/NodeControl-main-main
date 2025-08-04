@@ -3,17 +3,24 @@ import { useEffect } from "react";
 
 const withAuth = (WrappedComponent) => {
   return (props) => {
-    const Router = useRouter();
-    const userId =
-      typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
+    const router = useRouter();
 
     useEffect(() => {
-      if (!userId) {
-        Router.replace("/auth/login"); // Redirige al login si no está autenticado
+      // Solo en cliente
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          router.replace("/auth/login"); // O la ruta real de tu login
+        }
       }
-    }, [userId]);
+    }, []);
 
-    return userId ? <WrappedComponent {...props} /> : null;
+    // Si no hay token, no renderiza nada (opcional: puedes poner un loader/spinner)
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      return null;
+    }
+
+    return <WrappedComponent {...props} />;
   };
 };
 

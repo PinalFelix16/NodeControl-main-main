@@ -1,10 +1,17 @@
+const BASE = process.env.NEXT_PUBLIC_API_URL;
+
 export async function fetchClases() {
-    const res = await fetch(`http://localhost:8000/api/clases`);
-    if (!res.ok) {
-      throw new Error('Error fetching data');
-    }
-    return res.json();
+  const res = await fetch(`${BASE}/api/clases`, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' },
+  });
+  if (!res.ok) {
+    throw new Error(`Error fetching clases: ${res.status}`);
   }
+  return await res.json();
+}
+
+
 
   export async function agregarAlumnoPrograma(formData, id) {
     const response = await fetch(`http://localhost:8000/api/registrar-programa`, {

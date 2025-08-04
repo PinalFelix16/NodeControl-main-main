@@ -1,8 +1,18 @@
-import React from "react";
-
+import React, { useEffect, useState } from "react";
 import UserDropdown from "components/Dropdowns/UserDropdown.js";
 
 export default function Navbar() {
+  // 1. Crea un estado para guardar el tipo de usuario
+  const [userType, setUserType] = useState("");
+
+  // 2. Solo accede a localStorage dentro de useEffect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const tipo = localStorage.getItem('user_type') || "";
+      setUserType(tipo);
+    }
+  }, []);
+
   return (
     <>
       {/* Navbar */}
@@ -14,7 +24,8 @@ export default function Navbar() {
             href="#pablo"
             onClick={(e) => e.preventDefault()}
           >
-            {localStorage.getItem('user_type') }
+            {/* Renderiza solo cuando ya se cargó el valor */}
+            {userType}
           </a>
           {/* Form */}
           <form className="md:flex hidden flex-row flex-wrap items-center lg:ml-auto mr-3">
@@ -30,6 +41,7 @@ export default function Navbar() {
             </div>
           </form>
           {/* User */}
+          <UserDropdown />
         </div>
       </nav>
       {/* End Navbar */}

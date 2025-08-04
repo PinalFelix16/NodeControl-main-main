@@ -30,10 +30,10 @@ export default function AllClases({ onClickEvent, setView, setSelectedUser = () 
             {!isStudent && (
               <button
                 onClick={() => { setView('AddUser'); setSelectedUser(null); }}
-                className="mt-4 float-right bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200"
+                className="float-right mb-4 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white text-sm font-bold px-4 py-2 rounded shadow transition-colors duration-150 ease-linear outline-none focus:outline-none"
                 type="button"
               >
-                <i className="fas fa-plus mr-2"></i> Agregar Clase 1
+                <i className="fas fa-plus mr-2"></i> Agregar Clase
               </button>
             )}
           </div>
