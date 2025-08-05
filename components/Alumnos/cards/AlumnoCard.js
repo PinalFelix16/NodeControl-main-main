@@ -1,93 +1,108 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Admin from "layouts/Admin.js";
+import { bajaAlumno, altaAlumno } from "services/api/alumnos";
+import Modal from "components/Alumnos/modals/AddUserModal";
+import AllClasesPrueba from "./AllClasesPrueba";
+import AddProgramas from "./programas/AddProgramas";
+import EditProgramas from "./programas/EditProgramas.js";
+import Link from "next/link";
 
-// components
+export default function Programas2() {
+  const [view, setView] = useState('Table'); 
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const router = useRouter();
 
-export default function AlumnoCard({name="Sin nombre", id="Sin id", bDate="X", studentPhone="X", phone1="X", phone2="X", parent1="X", parent2="X", medical="X", address="Durango, dgo."}) {
+  useEffect(() => {
+    // Revisa si hay token en localStorage (usuario autenticado)
+    if (!localStorage.getItem("token")) {
+      router.replace("/auth/login"); // Cambia a tu ruta real si es necesario
+    }
+
+    // Verifica permisos de superadministrador
+    const userRaw = localStorage.getItem("usuario");
+    if (userRaw) {
+      try {
+        const user = JSON.parse(userRaw);
+        if (user && user.permisos === "SUPERADMINISTRADOR") {
+          setIsSuperadmin(true);
+        } else {
+          setIsSuperadmin(false);
+        }
+      } catch (e) {
+        setIsSuperadmin(false);
+      }
+    }
+  }, []);
+
+  const handleDelete = (action) => {
+    setTitle(action);
+    setShowModal(true);
+  };
+
+  const handleClose = () => {
+    setShowModal(false);
+    setTitle("");
+  };
+
+  const handleConfirm = () => {
+    setShowModal(false);
+    // Lógica adicional de confirmación, si es necesario
+  };
+
+  // Definir la función onClickEvent
+  const onClickEvent = (id_programa) => {
+    console.log("Programa seleccionado:", id_programa);
+    // Lógica adicional para manejar el evento onClick
+  };
+
   return (
     <>
-    <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-xl rounded-lg mt-16" style={{maxWidth:"600px", margin:"auto", marginTop:"90px"}}>
-        <div className="px-6">
-          <div className="flex flex-wrap justify-center">
-            <div className="w-full px-4 flex justify-center">
-              <div className="relative">
-                <img
-                  alt="..."
-                  src="/img/default-avatar.svg"
-                  className="shadow-xl rounded-full h-auto align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px"
-                />
-              </div>
-            </div>
-            <div className="w-full px-4 text-center mt-20">
-              <div className="flex justify-center py-4 lg:pt-4 pt-8">
-              
-              </div>
-            </div>
-          </div>
-          <div className="text-center mt-12">
-            <h3 className="text-xl font-semibold leading-normal mb-2 text-blueGray-700 mb-2">
-              {name}
-            </h3>
-            <div className="text-sm leading-normal mt-0 mb-2 text-blueGray-400 font-bold uppercase">
-              <i className="fas fa-map-marker-alt mr-2 text-lg text-blueGray-400"></i>{" "}
-              {address}
-            </div>
-            <div className="mb-2 text-blueGray-600 mt-10">
-              <i className="fas fa-calendar mr-2 text-lg text-blueGray-400"></i>
-              {bDate}
-            </div>
-            <div className="mb-2 text-blueGray-600">
-              <i className="fas fa-phone mr-2 text-lg text-blueGray-400"></i>
-              {studentPhone}
-            </div>
-          </div>
-          
-          <div className="w-full px-4 text-center mt-10">
-              <div className="flex justify-center py-4 lg:pt-4 pt-8">
-                <div className="mr-4 p-3 text-center">
-                  <span className="text-lg font-bold block uppercase tracking-wide text-blueGray-600">
-                    {parent1}
-                  </span>
-                  <span className="text-sm text-blueGray-400">Tutor 1</span>
-                </div>
-                
-                <div className="lg:mr-4 p-3 text-center">
-                  <span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
-                    {phone1}
-                 </span>
-                  <span className="text-sm text-blueGray-400">(Celular)</span>
-                </div>
-              </div>
-            </div>
-            <div className="w-full px-4 text-center mt-10">
-              <div className="flex justify-center py-4 lg:pt-4 pt-8">
-                <div className="mr-4 p-3 text-center">
-                  <span className="text-lg font-bold block uppercase tracking-wide text-blueGray-600">
-                    {parent2}
-                  </span>
-                  <span className="text-sm text-blueGray-400">Tutor 2</span>
-                </div>
-                
-                <div className="lg:mr-4 p-3 text-center">
-                  <span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
-                    {phone2}
-                  </span>
-                  <span className="text-sm text-blueGray-400">(Celular)</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-10 py-10 border-t border-blueGray-200 text-center">
-            <div className="flex flex-wrap justify-center">
-              <div className="w-full lg:w-9/12 px-4">
-                <p className="mb-4 text-lg leading-relaxed text-blueGray-700">
-                    Historial Medico: <br></br>
-               {medical}
-                </p>
-               
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Barra superior personalizada */}
+      <div className="flex justify-end items-center p-4 bg-white">
+        {/* Aquí va el botón de agregar usuario solo para superadmin */}
+        {isSuperadmin && (
+          <Link href="/administrador/usuarios">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold transition">
+              Agregar Usuario
+            </button>
+          </Link>
+        )}
       </div>
+
+      <Modal
+        show={showModal}
+        onClose={handleClose}
+        onConfirm={handleConfirm}
+        title={`Confirmar ${title}`}
+        message={`¿Estás seguro de que deseas dar de ${title} a este alumno?`}
+      />
+      {view === 'Table' && (
+        <div>
+          <button onClick={() => setView('AddUser')} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
+            Agregar Clase
+          </button>
+          <AllClasesPrueba 
+            onClickEvent={onClickEvent} 
+            title={title} 
+            setView={setView} 
+            setSelectedUser={setSelectedUser} 
+            handleDelete={handleDelete} 
+          />
+        </div>
+      )}
+      {view === 'AddUser' && (
+        <AddProgramas setView={setView} />
+      )}
+      {view === 'EditUser' && (
+        <EditProgramas setView={setView} selectedUser={selectedUser} />
+      )}
     </>
   );
 }
+
+// Asigna el layout de administrador al componente Programas2
+Programas2.layout = Admin;

@@ -1,15 +1,30 @@
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import UserDropdown from "components/Dropdowns/UserDropdown.js";
 
 export default function Navbar() {
-  // 1. Crea un estado para guardar el tipo de usuario
+  // 1. Crea un estado para guardar el tipo de usuario y si es superadmin
   const [userType, setUserType] = useState("");
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   // 2. Solo accede a localStorage dentro de useEffect
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const tipo = localStorage.getItem('user_type') || "";
-      setUserType(tipo);
+      // Aquí toma de localStorage el usuario completo si está disponible
+      const userRaw = localStorage.getItem("usuario");
+      if (userRaw) {
+        try {
+          const user = JSON.parse(userRaw);
+          setUserType(user.permisos || "");
+          setIsSuperadmin(user.permisos === "SUPERADMINISTRADOR");
+        } catch (e) {
+          setUserType("");
+          setIsSuperadmin(false);
+        }
+      } else {
+        setUserType("");
+        setIsSuperadmin(false);
+      }
     }
   }, []);
 
@@ -17,14 +32,13 @@ export default function Navbar() {
     <>
       {/* Navbar */}
       <nav className="absolute top-0 left-0 w-full z-10 bg-transparent md:flex-row md:flex-nowrap md:justify-start flex items-center p-4">
-        <div className="w-full mx-autp items-center flex justify-between md:flex-nowrap flex-wrap md:px-10 px-4">
+        <div className="w-full mx-auto items-center flex justify-between md:flex-nowrap flex-wrap md:px-10 px-4">
           {/* Brand */}
           <a
             className="text-white text-sm uppercase hidden lg:inline-block font-semibold"
             href="#pablo"
-            onClick={(e) => e.preventDefault()}
+            onClick={e => e.preventDefault()}
           >
-            {/* Renderiza solo cuando ya se cargó el valor */}
             {userType}
           </a>
           {/* Form */}
@@ -36,12 +50,23 @@ export default function Navbar() {
               <input
                 type="text"
                 placeholder="Buscar Alumno..."
-                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:ring w-full pl-10"
+                className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white rounded text-sm shadow outline-none focus:outline-none focus:ring w-full pl-10"
               />
             </div>
           </form>
-          {/* User */}
-          <UserDropdown />
+          {/* Botón sólo para SUPERADMINISTRADOR */}
+          {isSuperadmin && (
+            <Link href="/administrador/usuarios" className="ml-4">
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition shadow"
+                type="button"
+              >
+                Agregar Usuario
+              </button>
+            </Link>
+          )}
+          {/* Si quieres mantener el dropdown, lo puedes dejar; si no, elimínalo */}
+          {/* <UserDropdown /> */}
         </div>
       </nav>
       {/* End Navbar */}

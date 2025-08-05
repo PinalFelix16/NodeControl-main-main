@@ -6,6 +6,7 @@ import Modal from "components/Alumnos/modals/AddUserModal";
 import AllClasesPrueba from "./AllClasesPrueba";
 import AddProgramas from "./programas/AddProgramas";
 import EditProgramas from "./programas/EditProgramas.js";
+import Link from "next/link";
 
 export default function Programas2() {
   const [view, setView] = useState('Table'); 
@@ -20,6 +21,12 @@ export default function Programas2() {
       router.replace("/auth/login"); // Cambia a tu ruta real si es necesario
     }
   }, []);
+
+  <Link href="/administrador/usuarios">
+  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition">
+    Agregar Usuario
+  </button>
+  </Link>
 
   const handleDelete = (action) => {
     setTitle(action);
@@ -73,6 +80,8 @@ export default function Programas2() {
       )}
     </>
   );
+
+  
 }
 
 // Asigna el layout de administrador al componente Programas2
