@@ -3,9 +3,9 @@ import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";
 import { bajaAlumno, altaAlumno } from "services/api/alumnos";
 import Modal from "components/Alumnos/modals/AddUserModal";
-import AllClasesPrueba from "./AllClasesPrueba";
-import AddProgramas from "./programas/AddProgramas";
-import EditProgramas from "./programas/EditProgramas.js";
+import AllClasesPrueba from "pages/administrador/AllClasesPrueba";
+import AddProgramas from "pages/administrador/programas/AddProgramas";
+import EditProgramas from "pages/administrador/programas/EditProgramas";
 import Link from "next/link";
 
 export default function Programas2() {
