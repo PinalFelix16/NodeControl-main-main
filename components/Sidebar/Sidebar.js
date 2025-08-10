@@ -120,7 +120,7 @@ export default function Sidebar() {
           </h6>
 
           {/* Navigation */}
-          <ul className="md:flex-col md:min-w-full flex flex-col list-none">
+         <ul className="md:flex-col md:min-w-full flex flex-col list-none">
             {[
               { href: "/administrador/programas2", icon: "fas fa-tv", label: "Clases" },
               { href: "/administrador/alumnos",    icon: "fas fa-tools", label: "Alumnos" },
@@ -140,30 +140,30 @@ export default function Sidebar() {
                         : "text-blueGray-300 hover:text-blueGray-500")
                     }
                   >
-                    <i
-                      className={
-                        `${item.icon} mr-2 text-sm ` +
-                        (active ? "opacity-75" : "text-blueGray-300")
-                      }
-                    />{" "}
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
+          {/* Único hijo directo */}
+          <span className="flex items-center w-full transition-all duration-300">
+            <i className={`${item.icon} text-base` } />
+            <span className="ml-3">{item.label}</span>
+          </span>
+        </Link>
+      </li>
+    );
+  })}
 
-            {/* Logout */}
-            <li className="items-center">
-              <button
-                onClick={logout}
-                className="w-full text-left text-xs uppercase py-3 font-bold block 
-                           text-blueGray-300 hover:text-blueGray-500"
-              >
-                <i className="fas fa-sign-out-alt mr-2 text-sm" />
-                Cerrar Sesión
-              </button>
-            </li>
-          </ul>
+  {/* Logout */}
+  <li className="items-center mt-4">
+    <button
+      onClick={logout}
+      className="w-full py-2 px-4 flex items-center text-sm font-semibold text-white opacity-70 hover:text-red-400 hover:opacity-100 transition-all duration-300"
+    >
+      <span className="flex items-center w-full">
+        <i className="fas fa-sign-out-alt text-base" />
+        <span className="ml-3">Cerrar Sesión</span>
+      </span>
+    </button>
+  </li>
+</ul>
+
         </div>
       </div>
     </nav>

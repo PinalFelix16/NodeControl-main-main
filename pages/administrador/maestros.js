@@ -1,26 +1,35 @@
-import React, { useState } from "react";
-
-// layout for page
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 
 import Admin from "layouts/Admin.js";
 
-
-import { bajaMaestro } from "services/api/maestros";
-// import Modal from "components/Maestros/modals/AddUserModal";
-import AllMaestros from "./maestros/AllMaestros";
-import AddMaestros from "./maestros/AddMaestros";
-import EditMaestro from "./maestros/EditMaestro";
 import Modal from "components/Alumnos/modals/AddUserModal";
+import AllMaestros from "./AllMaestros";
+import AddMaestros from "./AddMaestro";
+import EditMaestro from "./EditMaestro";
+import ShowMaestro from "./ShowMaestro";
+
+import { bajaAlumno, altaAlumno } from "services/api/alumnos"; 
+// Si tienes endpoints específicos para maestros, cámbialos aquí
+
 export default function Maestros() {
-
-  const [view, setView] = useState('Table'); //Table, AddUser, EditUser, ShowUser
+  const [view, setView] = useState("Table"); // Table, AddUser, EditUser, ShowUser
   const [selectedUser, setSelectedUser] = useState(null);
-
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
- 
+
+  const router = useRouter();
+
+  useEffect(() => {
+    // Validación de login en cliente
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/auth/login");
+    }
+  }, [router]);
+
   const handleDelete = (action) => {
-    setTitle(action); 
+    if (!selectedUser) return alert("Selecciona un maestro primero.");
+    setTitle(action);
     setShowModal(true);
   };
 
@@ -31,36 +40,67 @@ export default function Maestros() {
 
   const handleConfirm = () => {
     setShowModal(false);
-    handleBajaMaestro(selectedUser) 
-  
+    if (title === "Baja") {
+      handleBaja(selectedUser);
+    } else if (title === "Alta") {
+      handleAlta(selectedUser);
+    }
+    setTitle("");
   };
 
-  const handleBajaMaestro = async (id) => {
-    const response = await bajaMaestro(id);
-
-    if (response.message != null) {
-        alert(response.message);
-        setTitle("");
-    } else {
-        alert(response.error);
+  const handleBaja = async (id) => {
+    try {
+      const response = await bajaAlumno(id);
+      alert(response.message || response.error || "Operación completada.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al dar de baja.");
     }
-};
+  };
 
+  const handleAlta = async (id) => {
+    try {
+      const response = await altaAlumno(id);
+      alert(response.message || response.error || "Operación completada.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al dar de alta.");
+    }
+  };
 
-
-  return <>
-   <Modal
+  return (
+    <>
+      <Modal
         show={showModal}
         onClose={handleClose}
         onConfirm={handleConfirm}
         title={`Confirmar ${title}`}
         message={`¿Estás seguro de que deseas dar de ${title} a este maestro?`}
       />
-  { view === "Table" ? (<AllMaestros title = {title} setView={setView} setSelectedUser={setSelectedUser} handleDelete={handleDelete}></AllMaestros>)
-    : view === "AddUser" ? (<AddMaestros setView={setView}></AddMaestros>) 
-    : view === "EditUser" ? (<EditMaestro setView={setView} selectedUser={selectedUser}>Edit User</EditMaestro>) 
-    : null}
+
+      {view === "Table" && (
+        <div>
+          <button
+            onClick={() => setView("AddUser")}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mb-4"
+          >
+            Agregar Maestro
+          </button>
+
+          <AllMaestros
+            title={title}
+            setView={setView}
+            setSelectedUser={setSelectedUser}
+            handleDelete={handleDelete}
+          />
+        </div>
+      )}
+
+      {view === "AddUser" && <AddMaestros setView={setView} />}
+      {view === "EditUser" && <EditMaestro setView={setView} selectedUser={selectedUser} />}
+      {view === "ShowUser" && <ShowMaestro selectedUser={selectedUser} setView={setView} />}
     </>
+  );
 }
 
-Maestros.layout = Admin; 
+Maestros.layout = Admin;

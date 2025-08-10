@@ -5,107 +5,97 @@ import Swal from "sweetalert2";
 
 import AlumnosTable from "components/Alumnos/AlumnosTable";
 import Admin from "layouts/Admin.js";
-import { fetchAlumnosStatus } from "services/api/alumnos";
 
 export default function AllAlumnos({ setView, setSelectedUser }) {
   const [alumnos, setAlumnos] = useState([]);
-  const [status, setStatus] = useState(1); // 1 = Activos, 0 = Inactivos
+  const [status, setStatus] = useState(1); // 1 = activos, 0 = inactivos
   const [searchText, setSearchText] = useState("");
   const [fetchedAlumnos, setFetchedAlumnos] = useState([]);
   const [selectedUser, setSelectedUserState] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
+  const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-  const [highlightId, setHighlightId] = useState(null); // 🔹 Alumno resaltado
-
-  // 🔹 Obtener alumnos
   const getAlumnos = async (newStatus = status) => {
     try {
-      const data = await fetchAlumnosStatus(newStatus);
-      setAlumnos(data);
-      setFetchedAlumnos(data);
+      const url = `${BASE}/alumnos/datos-combinados?status=${newStatus}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+
+      console.log("[GET alumnos]", { newStatus, raw });
+      const rows = Array.isArray(raw) ? raw : (raw.data ?? raw.alumnos ?? raw.results ?? []);
+      setAlumnos(rows || []);
+      setFetchedAlumnos(rows || []);
     } catch (err) {
       console.error("Error al obtener alumnos:", err);
       setAlumnos([]);
+      setFetchedAlumnos([]);
+      Swal.fire("Error", "No se pudieron cargar los alumnos.", "error");
     }
   };
 
+  // cuando cambias de ACTIVO <-> INACTIVO, limpia búsqueda y vuelve a pedir
   useEffect(() => {
+    setSearchText("");
     getAlumnos(status);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  // 🔹 Filtrar alumnos por búsqueda
+  // filtro por búsqueda
   useEffect(() => {
-    const filtered = fetchedAlumnos.filter(
-      (alumno) =>
-        alumno.nombre?.toLowerCase().includes(searchText.toLowerCase()) ||
-        alumno.id?.toString().includes(searchText)
+    const q = searchText.trim().toLowerCase();
+    if (!q) return setAlumnos(fetchedAlumnos);
+    setAlumnos(
+      fetchedAlumnos.filter(a =>
+        [
+          a.nombre ?? "",
+          a.apellido ?? "",
+          a.correo ?? "",
+          a.celular ?? "",
+          a.telefono ?? "",
+          String(a.id_alumno ?? ""),
+        ].join(" ").toLowerCase().includes(q)
+      )
     );
-    setAlumnos(filtered);
   }, [searchText, fetchedAlumnos]);
 
-  // 🔹 Maneja Alta/Baja con SweetAlert2 y resaltado temporal
   const handleDelete = async (accion) => {
     if (!selectedUser) return;
 
-    const result = await Swal.fire({
+    const ask = await Swal.fire({
       title: `¿Confirmar ${accion}?`,
       text: `¿Seguro que deseas dar de ${accion.toLowerCase()} a este alumno?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
       confirmButtonText: `Sí, ${accion}`,
       cancelButtonText: "Cancelar",
     });
-
-    if (!result.isConfirmed) return;
+    if (!ask.isConfirmed) return;
 
     try {
-      const url = `http://localhost:8000/api/alumnos/${selectedUser}/${accion.toLowerCase()}`;
-      const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      });
+      const url = `${BASE}/alumnos/${selectedUser}/${accion.toLowerCase()}`;
+      const res = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await res.json();
 
-      if (!response.ok) throw new Error(`Error en la solicitud: ${response.status}`);
-      const data = await response.json();
+      Swal.fire("Listo", `Alumno ${accion.toLowerCase()} correctamente`, "success");
 
-      // 🔹 Mensaje de éxito
-      Swal.fire({
-        icon: "success",
-        title: "¡Hecho!",
-        text: data.message || `Alumno ${accion.toLowerCase()} correctamente`,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      // 🔹 Cambiar de pestaña automáticamente
+      // mueve de pestaña si aplica y resalta
       if (accion === "Baja" && status === 1) {
-        setStatus(0); // Cambiar a inactivos
-        await getAlumnos(0);
-        setHighlightId(selectedUser); // Alumno resaltado en rojo
+        setStatus(0);
+        setHighlightId(selectedUser);
       } else if (accion === "Alta" && status === 0) {
-        setStatus(1); // Cambiar a activos
-        await getAlumnos(1);
-        setHighlightId(selectedUser); // Alumno resaltado en verde
+        setStatus(1);
+        setHighlightId(selectedUser);
       } else {
-        // Solo quitar de la lista si no cambia de pestaña
-        const updatedAlumnos = alumnos.filter((alumno) => alumno.id !== selectedUser);
-        setAlumnos(updatedAlumnos);
+        // si no cambió de pestaña, quítalo de la lista actual
+        setAlumnos(prev => prev.filter(a => a.id_alumno !== selectedUser));
       }
 
-      // 🔹 Quitar resaltado después de 3 segundos
       setTimeout(() => setHighlightId(null), 3000);
-
-    } catch (error) {
-      console.error(error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Hubo un problema al actualizar el alumno.",
-      });
+    } catch (e) {
+      console.error(e);
+      Swal.fire("Error", "No se pudo actualizar el alumno.", "error");
     }
   };
 
@@ -121,11 +111,8 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
           status={status}
           setStatus={setStatus}
           setView={setView}
-          setSelectedUser={(id) => {
-            setSelectedUserState(id);
-            setSelectedUser(id);
-          }}
-          highlightId={highlightId} // 🔹 Pasamos ID para resaltar
+          setSelectedUser={(id) => { setSelectedUserState(id); setSelectedUser(id); }}
+          highlightId={highlightId}
         />
       </div>
     </div>

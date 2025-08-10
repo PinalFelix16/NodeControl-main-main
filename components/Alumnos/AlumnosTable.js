@@ -10,7 +10,8 @@ export default function AlumnosTable({
   setSelectedUser, 
   handleDelete, 
   searchText, 
-  setSearchText 
+  setSearchText,
+  highlightId, // opcional: id_alumno a resaltar
 }) {
   return (
     <>
@@ -38,7 +39,7 @@ export default function AlumnosTable({
                 onClick={() => setStatus(1)} 
                 className={
                   "mt-4 mr-4 bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 " +
-                  (status ? "text-lightBlue-500 border-lightBlue-500" : "text-blueGray-500 border-blueGray-500")
+                  (status === 1 ? "text-lightBlue-500 border-lightBlue-500" : "text-blueGray-500 border-blueGray-500")
                 } 
                 type="button"
               >
@@ -49,7 +50,7 @@ export default function AlumnosTable({
                 onClick={() => setStatus(0)} 
                 className={
                   "mt-4 bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 " +
-                  (!status ? "text-lightBlue-500 border-lightBlue-500" : "text-blueGray-500 border-blueGray-500")
+                  (status === 0 ? "text-lightBlue-500 border-lightBlue-500" : "text-blueGray-500 border-blueGray-500")
                 } 
                 type="button"
               >
@@ -92,7 +93,7 @@ export default function AlumnosTable({
           <table className="items-center w-full bg-transparent border-collapse">
             <thead>
               <tr>
-                {["#", "ID", "Nombre", "Clases", "Celular", "Acciones"].map((col, idx) => (
+                {["#", "ID ALUMNO", "NOMBRE", "CLASES", "CELULAR", "ACCIONES"].map((col, idx) => (
                   <th
                     key={idx}
                     className={
@@ -108,72 +109,92 @@ export default function AlumnosTable({
               </tr>
             </thead>
             <tbody>
-              {alumnos.map((alumno, index) => (
-                <tr key={alumno.id}>
-                  <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center hover:bg-sky-700 cursor-pointer">
-                    {index + 1}
-                  </th>
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {alumno.id}
-                  </td>
-                  <td 
-                    onClick={() => { setView('ShowUser'); setSelectedUser(alumno.id); }} 
-                    className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4"
-                  >
-                    {alumno.nombre || "-"}
-                  </td>
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs p-4">
-                    {alumno.clases || "-"}
-                  </td>
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {alumno.telefono || "-"}
-                  </td>
-                  <td className="border-t-0 px-2 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {/* Ver expediente */}
-                    <button
-                      onClick={() => { setView('ShowUser'); setSelectedUser(alumno.id); }} 
-                      title="Ver expediente"
-                      className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
-                      type="button"
-                    >
-                      <i className="fas fa-address-card text-base text-2xl"></i>
-                    </button>
+              {alumnos.map((alumno, index) => {
+                const isHighlighted = highlightId && Number(highlightId) === Number(alumno.id_alumno);
+                const highlightClass = isHighlighted
+                  ? (status === 1 ? "bg-green-50 transition-colors" : "bg-red-50 transition-colors")
+                  : "";
 
-                    {/* Editar alumno */}
-                    <button
-                      onClick={() => { setView('EditUser'); setSelectedUser(alumno.id); }} 
-                      title="Editar alumno"
-                      className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
-                      type="button"
-                    >
-                      <i className="fas fa-user-edit text-2xl "></i>
-                    </button>
+                return (
+                  <tr key={alumno.id_alumno} className={highlightClass}>
+                    <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left">
+                      {index + 1}
+                    </th>
 
-                    {/* Alta / Baja */}
-                    {status === 1 ? (
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {alumno.id_alumno}
+                    </td>
+
+                    <td 
+                      onClick={() => { setView('ShowUser'); setSelectedUser(alumno.id_alumno); }} 
+                      className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 hover:underline cursor-pointer"
+                    >
+                      {alumno.nombre || "-"}
+                    </td>
+
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs p-4">
+                      {/* Puede venir como clases_count si usas withCount */}
+                      {alumno.clases ?? alumno.clases_count ?? "-"}
+                    </td>
+
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {alumno.celular || alumno.telefono || "-"}
+                    </td>
+
+                    <td className="border-t-0 px-2 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {/* Ver expediente */}
                       <button
-                        onClick={() => { setSelectedUser(alumno.id); handleDelete('Baja'); }} 
-                        title="Dar de baja a alumno"
-                        className="text-red-500 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
+                        onClick={() => { setView('ShowUser'); setSelectedUser(alumno.id_alumno); }} 
+                        title="Ver expediente"
+                        className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
                         type="button"
                       >
-                        <i className="fas fa-arrow-alt-circle-down text-2xl "></i>
+                        <i className="fas fa-address-card text-2xl"></i>
                       </button>
-                    ) : (
+
+                      {/* Editar alumno */}
                       <button
-                        onClick={() => { setSelectedUser(alumno.id); handleDelete('Alta'); }} 
-                        title="Dar de alta a alumno"
-                        className="text-green-500 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
+                        onClick={() => { setView('EditUser'); setSelectedUser(alumno.id_alumno); }} 
+                        title="Editar alumno"
+                        className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
                         type="button"
                       >
-                        <i className="fas fa-arrow-alt-circle-up text-2xl "></i>
+                        <i className="fas fa-user-edit text-2xl"></i>
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
+
+                      {/* Alta / Baja */}
+                      {status === 1 ? (
+                        <button
+                          onClick={() => { setSelectedUser(alumno.id_alumno); handleDelete('Baja'); }} 
+                          title="Dar de baja a alumno"
+                          className="text-red-500 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
+                          type="button"
+                        >
+                          <i className="fas fa-arrow-alt-circle-down text-2xl"></i>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setSelectedUser(alumno.id_alumno); handleDelete('Alta'); }} 
+                          title="Dar de alta a alumno"
+                          className="text-green-500 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 hover:text-lightBlue-500 hover:border-lightBlue-500"
+                          type="button"
+                        >
+                          <i className="fas fa-arrow-alt-circle-up text-2xl"></i>
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+
+          {/* Vacío */}
+          {alumnos.length === 0 && (
+            <div className="p-6 text-center text-xs text-blueGray-400">
+              No hay alumnos para mostrar.
+            </div>
+          )}
         </div>
       </div>
     </>
@@ -186,4 +207,13 @@ AlumnosTable.defaultProps = {
 
 AlumnosTable.propTypes = {
   color: PropTypes.oneOf(["light", "dark"]),
+  alumnos: PropTypes.array,
+  status: PropTypes.number,
+  setStatus: PropTypes.func,
+  setView: PropTypes.func,
+  setSelectedUser: PropTypes.func,
+  handleDelete: PropTypes.func,
+  searchText: PropTypes.string,
+  setSearchText: PropTypes.func,
+  highlightId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
 };
