@@ -1,78 +1,76 @@
 export default class NominasService {
   constructor() {
-    this.url = "http://localhost:8000/api/";
+    const base = process.env.NEXT_PUBLIC_API || "http://localhost:8000/api";
+    this.url = base.endsWith("/") ? base : base + "/";
     this.prefix = "nominas/";
   }
 
-  async getAll() {
-    const response = await fetch(this.url + this.prefix);
-    const data = await response.json();
+  // --- util interno para fetch seguro ---
+  async http(input, init = {}) {
+    const res = await fetch(input, {
+      // credentials: "include", // ← descomenta si usas cookies/sanctum
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init.headers || {}),
+      },
+    });
+    // Evita crashear si el backend regresa HTML de error
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
+
+    if (!res.ok) {
+      const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
     return data;
+  }
+
+  // --- CRUD / listas ---
+  async getAll() {
+    return this.http(this.url + this.prefix);
   }
 
   async create(data) {
-    const response = await fetch(this.url + this.prefix, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-    const res = await response.json();
-    return res;
+    return this.http(this.url + this.prefix, { method: "POST", body: JSON.stringify(data) });
   }
 
   async edit(id, data) {
-    const response = await fetch(this.url + this.prefix + id, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-    const res = await response.json();
-    return res;
+    return this.http(this.url + this.prefix + id, { method: "PUT", body: JSON.stringify(data) });
   }
 
   async delete(id) {
-    await fetch(this.url + this.prefix + id, {
-      method: "DELETE",
-    });
+    await this.http(this.url + this.prefix + id, { method: "DELETE" });
+    return true;
   }
 
+  // --- filtros/utilidades ---
   async getYears() {
-    const response = await fetch(this.url + "anios/");
-    const data = await response.json();
-    return data;
+    const data = await this.http(this.url + this.prefix + "anios");
+    return Array.isArray(data) ? data : [];
   }
 
   async getByYear(year) {
-    const response = await fetch(this.url + this.prefix + "anios/" + year);
-    const data = await response.json();
-    return data;
+    return this.http(this.url + this.prefix + "mostrar/" + year);
   }
 
   async getUsers() {
-    const response = await fetch(this.url + "lista-usuarios/");
-    const data = await response.json();
-    return data;
+    return this.http(this.url + "usuarios");
   }
 
   async getInforme(id) {
-    const response = await fetch(this.url + "informe-nomina/" + id);
-    const data = await response.json();
-    return data;
+    return this.http(this.url + this.prefix + id + "/informe");
   }
 
   async generarNomina(id) {
-    const response = await fetch(this.url + "generar-nomina/", {
+    return this.http(this.url + this.prefix + "generar", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ id }),
     });
-    const data = await response.json();
-    return data;
   }
+
+  // --- helpers para botones ---
+  informePrintUrl(id) { return this.url + this.prefix + id + "/informe/print"; }
+  informePdfUrl(id)   { return this.url + this.prefix + id + "/informe/pdf"; }
 }
