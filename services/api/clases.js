@@ -1,37 +1,18 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL;
+// services/api/clases.js
+export async function fetchClases(params = {}) {
+  const base = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  const qs = new URLSearchParams(params).toString();
+  const url = `${base}/api/clases${qs ? `?${qs}` : ''}`;
 
-export async function fetchClases() {
-  const res = await fetch(`${BASE}/api/clases`, {
-    method: 'GET',
-    headers: { 'Accept': 'application/json' },
-  });
+  const res = await fetch(url, { method: 'GET', headers: { Accept: 'application/json' } });
   if (!res.ok) {
-    throw new Error(`Error fetching clases: ${res.status}`);
+    // Muestra el mensaje del backend si vino en JSON (útil para depurar 500)
+    let msg = `Error fetching clases: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.message || body?.error) msg += ` - ${body.message || body.error}`;
+    } catch (e) {}
+    throw new Error(msg);
   }
-  return await res.json();
+  return res.json();
 }
-
-
-
-  export async function agregarAlumnoPrograma(formData, id) {
-    const response = await fetch(`http://localhost:8000/api/registrar-programa`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-    });
-  
-    return response.json();
-  }
-  export async function agregarAlumnoVisita(id_alumno, id_programa) {
-    const response = await fetch(`http://localhost:8000/api/registrar-visita/${id_alumno}/${id_programa}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(response)
-    });
-  
-    return response.json();
-  }
