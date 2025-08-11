@@ -52,3 +52,4 @@ export async function fetchAlumnosStatus(id_alumno) {
 
       return response.json();
   }
+

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import ProtectedRoute from "components/ProtectedRoute";
 
 // --- Formulario de registro de usuario ---
 function RegisterUserForm({ onUserCreated }) {
@@ -38,6 +39,7 @@ function RegisterUserForm({ onUserCreated }) {
       setError("");
       if (onUserCreated) onUserCreated();
     } else {
+      // Personaliza el mensaje aquí si quieres
       setError(result.message || "Error al crear usuario");
     }
   };
@@ -53,7 +55,7 @@ function RegisterUserForm({ onUserCreated }) {
         <option value="ADMINISTRADOR">ADMINISTRADOR</option>
         <option value="SUPERADMINISTRADOR">SUPERADMINISTRADOR</option>
       </select>
-      <button type="submit" className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded font-bold transition mt-2">
+      <button type="submit" className="bg-green-500 hover:bg-green-600 text-black px-6 py-2 rounded font-bold transition mt-2">
         Agregar usuario
       </button>
     </form>
@@ -70,9 +72,20 @@ function UserList() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const token = localStorage.getItem("token");
-  const userData = JSON.parse(localStorage.getItem("usuario") || "{}");
-  const isSuperadmin = userData.permisos === "SUPERADMINISTRADOR";
+  // Solo lee el token y permisos después de montar
+  const [isClient, setIsClient] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [token, setToken] = useState(null);
+
+  useEffect(() => {
+    setIsClient(true);
+    const userDataRaw = localStorage.getItem("usuario");
+    if (userDataRaw) {
+      const userData = JSON.parse(userDataRaw);
+      setIsSuperadmin(userData.permisos === "SUPERADMINISTRADOR");
+    }
+    setToken(localStorage.getItem("token"));
+  }, []);
 
   const fetchUsers = () => {
     setLoading(true);
@@ -87,9 +100,9 @@ function UserList() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    if (token) fetchUsers();
     // eslint-disable-next-line
-  }, []);
+  }, [token]);
 
   const handleEdit = (user) => {
     setEditUser(user);
@@ -141,7 +154,7 @@ function UserList() {
     }
   };
 
-  if (loading) return <div className="text-center py-10">Cargando usuarios...</div>;
+  if (!isClient || loading) return <div className="text-center py-10">Cargando usuarios...</div>;
 
   return (
     <div className="mt-6">
@@ -208,47 +221,28 @@ function UserList() {
 
 // --- Componente principal de la página ---
 export default function Usuarios() {
-  const [isSuperadmin, setIsSuperadmin] = useState(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userRaw = localStorage.getItem("usuario");
-      if (userRaw) {
-        try {
-          const user = JSON.parse(userRaw);
-          if (user && user.permisos === "SUPERADMINISTRADOR") {
-            setIsSuperadmin(true);
-            return;
-          }
-        } catch (e) {}
-      }
-      setIsSuperadmin(false);
-    }
+    setIsClient(true);
   }, []);
 
-  if (isSuperadmin === null) {
-    return <div className="p-8 text-xl text-center text-gray-400">Cargando...</div>;
-  }
-
-  if (!isSuperadmin) {
-    return <div className="p-8 text-xl text-center text-red-500">No autorizado</div>;
-  }
+  if (!isClient) return <div className="p-8 text-xl text-center text-gray-400">Cargando...</div>;
 
   return (
-    // Fondo degradado igual que el login. Cambia a "bg-login" si usas tu CSS.
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600">
-      {/* Botón para regresar */}
-      <div className="w-full max-w-md mb-4">
-        <Link href="/programas2">
-          <button className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded mb-4 w-full font-bold transition">
-            ← Regresar a Inicio
-          </button>
-        </Link>
+    <ProtectedRoute permisoRequerido="SUPERADMINISTRADOR">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600">
+        {/* Botón para regresar */}
+        <div className="w-full max-w-md mb-4">
+          <Link href="/programas2">
+            <button className="bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded mb-4 w-full font-bold transition">
+              ← Regresar a Inicio
+            </button>
+          </Link>
+        </div>
+        <RegisterUserForm onUserCreated={() => window.location.reload()} />
+        <UserList />
       </div>
-      <RegisterUserForm onUserCreated={() => window.location.reload()} />
-      <UserList />
-    </div>
+    </ProtectedRoute>
   );
 }
-
-

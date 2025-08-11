@@ -5,7 +5,7 @@ import { bajaAlumno, altaAlumno } from "services/api/alumnos";
 import Modal from "components/Alumnos/modals/AddUserModal";
 import AllClasesPrueba from "pages/administrador/AllClasesPrueba";
 import AddProgramas from "pages/administrador/programas/AddProgramas";
-import EditProgramas from "pages/administrador/programas/EditProgramas.js";
+import EditProgramas from "pages/administrador/programas/EditProgramas";
 import Link from "next/link";
 
 export default function Programas2() {

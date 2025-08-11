@@ -7,7 +7,7 @@
   "license": "MIT",
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.15.3",
-    "@headlessui/react": "^2.0.4",
+    "@headlessui/react": "^2.2.7",
     "@popperjs/core": "2.9.1",
     "@tailwindcss/forms": "0.2.1",
     "axios": "^1.11.0",

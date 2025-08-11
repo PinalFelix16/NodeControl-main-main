@@ -1,37 +1,53 @@
-import React, { useState } from "react";
-
-// layout for page
-
+import React, { useEffect, useState } from "react";
+import ProtectedRoute from "components/ProtectedRoute";
 import Admin from "layouts/Admin.js";
-
-
-// import Modal from "components/Cortes/modals/AddUserModal";
-// import AllCortes from "./cortes/AllCortes";
 import AllCortes from "./cortes/AllCortes";
+
 export default function Cortes() {
+  const [cortes, setCortes] = useState(null); // Empieza en null para mostrar 'Cargando...'
+  const [loading, setLoading] = useState(true);
 
-  const [view, setView] = useState('Table'); //Table, AddUser, EditUser, ShowUser
-  const [selectedUser, setSelectedUser] = useState(null);
+  // Traer los datos actualizados
+  const fetchCortes = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:8000/api/corte-caja", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    setCortes(data);
+    setLoading(false);
+  };
 
-  
+  useEffect(() => {
+    fetchCortes();
+  }, []);
 
-  const handleBajaCorte = async (id) => {
-    const response = null;// await bajaCorte(id);
-
-    if (response.message != null) {
-        alert(response.message);
-    } else {
-        alert(response.error);
-    }
-};
-
-
-
-  return <>
-   
-  { view === "Table" ? (<AllCortes setView={setView} setSelectedUser={setSelectedUser} ></AllCortes>)
-    : null}
-    </>
+  return (
+    <ProtectedRoute permisoRequerido="SUPERADMINISTRADOR">
+      <AllCortes
+        cortes={cortes}
+        loading={loading}
+        reloadCortes={fetchCortes}
+      />
+    </ProtectedRoute>
+  );
 }
 
-Cortes.layout = Admin; 
+Cortes.layout = Admin;
+
+export async function realizarCorte(data) {
+  const token = localStorage.getItem("token");
+  const res = await fetch("http://localhost:8000/api/realizar-corte", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+

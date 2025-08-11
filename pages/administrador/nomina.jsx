@@ -1,3 +1,5 @@
+// <-- PROTOCOLO ROJO: ARCHIVO LIMPIADO. Se eliminó el bloque duplicado que tenía el import de ViewHandler comentado y redefinía Nomina/NominaWrapper.
+
 "use client";
 import Modal from "components/modal";
 import HeadCell from "components/table/headCell";
@@ -7,7 +9,7 @@ import Thead from "components/table/Thead";
 import TRow from "components/table/Trow";
 import Admin from "layouts/Admin";
 import { useState } from "react";
-import ViewHandler from "components/nominas/ViewHandler";
+import ViewHandler from "components/nominas/ViewHandler"; // <-- PROTOCOLO ROJO: IMPORT CORRECTO Y ÚNICO
 import Toolbar from "components/nominas/toolbar";
 import EyeIcon from "components/nominas/eyeIcon";
 import BookIcon from "components/nominas/bookIcon";
@@ -21,9 +23,12 @@ function Nomina() {
   const [nomina, setNomina] = useState({});
   const [view, setView] = useState("");
 
-  const handleOpenModal = (id, view) => {
-    setNomina(id);
-    setView(view);
+  // Base de API (usa NEXT_PUBLIC_API o localhost:8000/api por defecto)
+  const API = process.env.NEXT_PUBLIC_API || "http://localhost:8000/api";
+
+  const handleOpenModal = (row, viewName) => {
+    setNomina(row);
+    setView(viewName);
     setShow(true);
   };
 
@@ -31,6 +36,13 @@ function Nomina() {
     setShow(false);
     refresh();
   };
+
+  // Botones extra
+  const abrirImprimible = (id) =>
+    window.open(`${API}/nominas/${id}/informe/print`, "_blank");
+
+  const descargarPdf = (id) =>
+    window.open(`${API}/nominas/${id}/informe/pdf`, "_blank");
 
   return (
     <div className="relative flex flex-col z-10">
@@ -50,33 +62,62 @@ function Nomina() {
           {(nominas.message && <TRow>{nominas.message}</TRow>) ||
             nominas.map((n, i) => (
               <TRow
-                key={n.fecha + "_" + i}
+                key={n.id_nomina ?? `${n.fecha}_${i}`}
                 cells={[
                   n.id_nomina,
-                  n.fecha,
+                  n.formated_fecha || n.fecha,
                   n.autor,
                   n.total_neto,
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" key={`acciones_${n.id_nomina}`}>
+                    {/* Ver nómina (detalle simple) */}
                     <button
                       className="p-2 rounded-sm ml-3 border-white border"
+                      title="Ver nómina"
                       onClick={() => handleOpenModal(n, "Ver nómina")}
                     >
                       <EyeIcon />
                     </button>
+
+                    {/* Información general (informe detallado en modal) */}
                     <button
                       className="p-2 rounded-sm ml-3 border-white border"
+                      title="Información general"
                       onClick={() => handleOpenModal(n, "Información general")}
                     >
                       <BookIcon />
                     </button>
+
+                    {/* Imprimir (vista Blade) */}
                     <button
                       className="p-2 rounded-sm ml-3 border-white border"
+                      title="Imprimir informe"
+                      onClick={() => abrirImprimible(n.id_nomina)}
+                    >
+                      🖨️
+                    </button>
+
+                    {/* Descargar PDF */}
+                    <button
+                      className="p-2 rounded-sm ml-3 border-white border"
+                      title="Descargar PDF"
+                      onClick={() => descargarPdf(n.id_nomina)}
+                    >
+                      📄
+                    </button>
+
+                    {/* Editar */}
+                    <button
+                      className="p-2 rounded-sm ml-3 border-white border"
+                      title="Editar nómina"
                       onClick={() => handleOpenModal(n, "Editar nómina")}
                     >
                       <Editicon />
                     </button>
+
+                    {/* Eliminar */}
                     <button
                       className="p-2 rounded-sm ml-3 border-white border"
+                      title="Eliminar nómina"
                       onClick={() => handleOpenModal(n, "Eliminar nómina")}
                     >
                       <DeleteIcon />
@@ -87,6 +128,7 @@ function Nomina() {
             ))}
         </TBody>
       </Table>
+
       <Modal show={show} title={view} onClose={handleClose}>
         <ViewHandler view={view} nomina={nomina} handleClose={handleClose} />
       </Modal>

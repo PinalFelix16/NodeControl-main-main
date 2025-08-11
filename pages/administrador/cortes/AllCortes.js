@@ -1,112 +1,110 @@
 import React, { useEffect, useState } from "react";
-
-// components
-
-
-// layout for page
-
-import Admin from "layouts/Admin.js";
-
 import CortesTable from "components/Cortes/CortesTable";
-import { fetchCortes, miscelanea, realizarCorte } from "services/api/cortes";
 import Modal from "components/Alumnos/modals/AddUserModal";
-export default function AllCortes({setView, setSelectedUser}) {
-  const [cortes, setCortes] = useState([]);
-  const [status, setStatus] = useState(1);
+import { realizarCorte, miscelanea } from "services/api/cortes";
+
+export default function AllCortes({ cortes, loading, reloadCortes }) {
   const [concepto, setConcepto] = useState("");
   const [monto, setMonto] = useState("");
-  const [fetchedCortes, setFetchedCortes] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  
+  const [modalTitle, setModalTitle] = useState("");
   const [typeS, setTypeS] = useState(0);
+  const [userId, setUserId] = useState("");
+  const [clientReady, setClientReady] = useState(false); // <-- CORRECCIÓN
 
- 
-  const [title, setTitle] = useState("");
+  useEffect(() => {
+    setClientReady(true);
+    if (typeof window !== "undefined") {
+      const raw = localStorage.getItem("usuario");
+      if (raw) {
+        try {
+          const user = JSON.parse(raw);
+          setUserId(user.id || "");
+        } catch (e) {
+          setUserId("");
+        }
+      }
+    }
+  }, []);
 
+  // --- Estado local de la tabla, así la podemos limpiar después de un corte
+  const [localCortes, setLocalCortes] = useState(cortes);
+
+  // --- Cuando recibimos nuevos cortes desde props, sincronizamos el local
+  useEffect(() => {
+    setLocalCortes(cortes);
+  }, [cortes]);
+
+  // --- Agregar miscelánea ---
   const handleAddMisc = async () => {
-    const data = await miscelanea({nombre: concepto, monto: monto});
-    if (data?.message != null) {
-        alert(data.message);
-    }else alert("Ocurrio un error");
+    await miscelanea({
+      descripcion: concepto,
+      monto: monto,
+      corte: 0
+    });
     setConcepto("");
     setMonto("");
-    
-    getCortes(); 
-  }
-
-   
-  const handleDelete = (action) => {
-    setTitle(action); 
-    setShowModal(true);
+    await reloadCortes();
   };
 
-  const handleClose = () => {
-    setShowModal(false);
-    setTitle("");
-  };
-
-
-  async function getCortes() {
-    const data = await fetchCortes();
-    setCortes(data);
-    setFetchedCortes(data);
-    console.log(data);
-  }
- 
-  useEffect(() => {
-  
-
-    getCortes();
-  }, [status, title]);
-
-  const handleHacerCorte = async () => {
-    setTitle('hacer corte'); 
+  const handleHacerCorte = () => {
+    setModalTitle("hacer corte");
     setShowModal(true);
     setTypeS(2);
-    
-  }
-
-  
+  };
 
   const handleConfirm = async () => {
     setShowModal(false);
-    if(typeS === 2) {
-      const totalSinComa = parseFloat(cortes.total.replace(/,/g, ''));
-      const result = await realizarCorte({
-          'total': totalSinComa,
-          'id_autor': 'aaa'
+    if (typeS === 2) {
+      const totalSinComa = typeof (localCortes?.total) === "string"
+        ? parseFloat(localCortes.total.replace(/,/g, "")) || 0
+        : localCortes?.total || 0;
+
+      await realizarCorte({
+        total: totalSinComa,
+        id_autor: userId
       });
 
-      if (result.message != null ) alert(result.message);
-      else alert("Algo salio mal al hacer el corte.");
+      // --- LIMPIA LA TABLA LOCAL ---
+      setLocalCortes({
+        programaData: [],
+        secundarioData: [],
+        miscelanioData: [],
+        total: "",
+      });
 
-
+      await reloadCortes(); // Por si quieres recargar de backend
     }
-
-    getCortes();
-
-  
   };
 
+  // --- SOLO RENDERIZA EN CLIENTE ---
+  if (!clientReady) return null;
 
+  if (loading || !localCortes) return <div className="text-center py-10">Cargando cortes...</div>;
 
   return (
     <>
-    <Modal
+      <Modal
         show={showModal}
-        onClose={handleClose}
+        onClose={() => setShowModal(false)}
         onConfirm={handleConfirm}
-        title={`Confirmar ${title}`}
-        message={`¿Estás seguro de que deseas  ${title}?`}
+        title={`Confirmar ${modalTitle}`}
+        message={`¿Estás seguro de que deseas ${modalTitle}?`}
       />
       <div className="flex flex-wrap mt-4">
-     
-        <div className="w-full mb-12 px-4"> 
-          <CortesTable color="dark" handleHacerCorte={handleHacerCorte} handleAddMisc={handleAddMisc}  setConcepto={setConcepto} setMonto={setMonto} monto={monto} concepto={concepto} cortes={cortes} handleDelete={handleDelete} status={status} setStatus={setStatus} setView={setView} setSelectedUser={setSelectedUser}/>
+        <div className="w-full mb-12 px-4">
+          <CortesTable
+            color="dark"
+            handleHacerCorte={handleHacerCorte}
+            handleAddMisc={handleAddMisc}
+            setConcepto={setConcepto}
+            setMonto={setMonto}
+            monto={monto}
+            concepto={concepto}
+            cortes={localCortes}
+          />
         </div>
       </div>
     </>
-  )
+  );
 }
-
-AllCortes.layout = Admin; 
