@@ -1,6 +1,5 @@
 import React, { useRef } from "react";
 import PropTypes from "prop-types";
-import Link from "next/link";
 
 export default function CortesTable({
   handleHacerCorte,
@@ -79,14 +78,14 @@ export default function CortesTable({
                 >
                   <i className="fas fa-plus "></i>
                 </button>
-                <span style={{  alignItems: "center" }}>
-                  {/* Tu otro botón aquí */}
+                {/*<span style={{  alignItems: "center" }}>
+                   Tu otro botón aquí 
                   <Link href="/administrador/CortesHistorico">
                     <button className="ml-2 bg-blue-600 text-white px-4 py-2 rounded">
                       Cortes Mensuales
                     </button>
                   </Link>
-                </span>
+                </span>*/}
               </span>
               <button
                 onClick={handlePrint}
