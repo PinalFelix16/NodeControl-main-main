@@ -1,81 +1,52 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL
+// services/api/alumnos.js
+const API =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
+  "http://127.0.0.1:8000/api";
 
-/**
- * Obtiene los alumnos filtrados por status (0 inactivos, 1 activos)
- * @param {0|1} status
- */
-export async function fetchAlumnosStatus(status) {
-  const url = `${BASE}/alumnos/datos-combinados?status=${status}`
+async function http(path, options = {}) {
+  const url = `${API}${path.startsWith("/") ? "" : "/"}${path}`;
+  const headers = {
+    Accept: "application/json",
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers || {}),
+  };
+  const res = await fetch(url, { ...options, headers });
 
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json'
-    }
-  })
+  const text = await res.text();
+  let data = text ? JSON.parse(text) : null;
 
   if (!res.ok) {
-    // Incluye el código de estado para facilitar el debug
-    throw new Error(`Error fetching alumnos (HTTP ${res.status})`)
+    const err = new Error(data?.message || res.statusText);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
-
-  return await res.json()
+  return data;
 }
 
-
-  export async function storeAlumno(formData) {
-    const response = await fetch("http://localhost:8000/api/alumnos", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
-    });
-
-    return response.json();
+// ===== Alumnos =====
+export function fetchAlumnos(q) {
+  return http(`/alumnos${q ? `?${q}` : ""}`, { method: "GET" });
+}
+export function fetchAlumnoAllData(id) {
+  if (id == null) throw new Error("id requerido");
+  return http(`/alumnos/${id}`, { method: "GET" });
 }
 
-export async function updateAlumno(formData, id) {
-  const response = await fetch(`http://localhost:8000/api/alumnos/${id}`, {
-      method: "PUT",
-      headers: {
-          "Content-Type": "application/json"
-      },
-      body: JSON.stringify(formData)
-  });
-
-  return response.json();
+// 👉 Nombre que usa tu AddForm
+export function storeAlumno(payload) {
+  return http(`/alumnos`, { method: "POST", body: JSON.stringify(payload) });
 }
 
-export async function bajaAlumno(id) {
-  const response = await fetch(`http://localhost:8000/api/alumnos-baja/${id}`, {
-      method: "PUT",
-      headers: {
-          "Content-Type": "application/json"
-      }
-  });
-
-  return response.json();
+// También dejamos update/delete por si los usas
+export function updateAlumno(payload, id) {
+  if (id == null) throw new Error("id requerido");
+  return http(`/alumnos/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+export function deleteAlumno(id) {
+  if (id == null) throw new Error("id requerido");
+  return http(`/alumnos/${id}`, { method: "DELETE" });
 }
 
-export async function altaAlumno(id) {
-  const response = await fetch(`http://localhost:8000/api/alumnos/${id}/alta`, {
-      method: "PUT",
-      headers: {
-          "Content-Type": "application/json"
-      }
-  });
-
-  return response.json();
-}
-
-export async function fetchAlumnoAllData(id) {
-  const response = await fetch(`http://localhost:8000/api/alumnos/${id}`, {
-      method: "PUT",
-      headers: {
-          "Content-Type": "application/json"
-      }
-  });
-
-  return response.json();
-}
+// (opcional) export default por comodidad
+export default { fetchAlumnos, fetchAlumnoAllData, storeAlumno, updateAlumno, deleteAlumno };

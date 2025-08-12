@@ -1,195 +1,235 @@
+// components/Alumnos/Forms/EditForm.jsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-import { fetchAlumnoAllData, updateAlumno } from "services/api/alumnos";
+import { useEffect, useMemo, useState } from "react";
+import {
+  fetchAlumnoAllData,
+  updateAlumno,
+} from "services/api/alumnos";
 
-export default function EditarAlumno({ setView, selectedUser }) {
-  const initialFormData = {
+// Si usas sweetalert2:
+import Swal from "sweetalert2";
+
+function getAlumnoId(input) {
+  if (input == null) return null;
+  if (typeof input === "number" || typeof input === "string") return input;
+  // soporta distintas formas que has usado en el proyecto:
+  return input.id_alumno ?? input.id ?? null;
+}
+
+function normalizeFecha(fecha) {
+  // Acepta "YYYY-MM-DD", Date, o algo parseable por Date
+  if (!fecha) return null;
+  if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return fecha;
+  }
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export default function EditForm({ selectedUser, onSaved, onCancel }) {
+  const [loading, setLoading] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [formData, setFormData] = useState({
     nombre: "",
-    fecha_nac: "",
+    apellido: "", // si tu tabla no lo usa, quítalo del payload en submit
     celular: "",
+    telefono: "",
     tutor: "",
     tutor_2: "",
-    telefono: "",
     telefono_2: "",
-    hist_medico: "",
-    status: 1,
-    beca: "0.00"
-  };
+    correo: "",
+    fecha_nac: "",
+    status: 1, // o "Activo"/"Inactivo" según tu UI
+    beca: 0,
+    observaciones: "",
+    // agrega aquí el resto de campos que tenga tu formulario
+  });
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [loading, setLoading] = useState(false);
+  const alumnoId = useMemo(() => getAlumnoId(selectedUser), [selectedUser]);
 
-  // 1️⃣ Obtener datos del alumno
   useEffect(() => {
-    const getAlumno = async () => {
-      try {
-        const data = await fetchAlumnoAllData(selectedUser);
-        if (data?.alumno) {
-          setFormData({
-            nombre: data.alumno.nombre || "",
-            fecha_nac: data.alumno.fecha_nac || "",
-            celular: data.alumno.celular || "",
-            tutor: data.alumno.tutor || "",
-            tutor_2: data.alumno.tutor_2 || "",
-            telefono: data.alumno.telefono || "",
-            telefono_2: data.alumno.telefono_2 || "",
-            hist_medico: data.alumno.hist_medico || "",
-            status: data.alumno.status ?? 1,
-            beca: data.alumno.beca?.toString() || "0.00"
-          });
-        }
-      } catch (error) {
-        console.error("Error al obtener alumno:", error);
-        Swal.fire("Error", "No se pudieron cargar los datos del alumno", "error");
+    let active = true;
+    async function load() {
+      if (!alumnoId) {
+        setCargando(false);
+        return;
       }
-    };
+      try {
+        setCargando(true);
+        const data = await fetchAlumnoAllData(alumnoId);
+        // El backend puede responder { alumno: {...} } o solo {...}
+        const a = data?.alumno ?? data ?? {};
 
-    if (selectedUser) {
-      getAlumno();
+        // Mapeo defensivo para no romper si faltan llaves:
+        setFormData((prev) => ({
+          ...prev,
+          nombre: a.nombre ?? "",
+          apellido: a.apellido ?? "",
+          celular: a.celular ?? "",
+          telefono: a.telefono ?? "",
+          tutor: a.tutor ?? "",
+          tutor_2: a.tutor_2 ?? "",
+          telefono_2: a.telefono_2 ?? "",
+          correo: a.correo ?? "",
+          fecha_nac: a.fecha_nac ? normalizeFecha(a.fecha_nac) : "",
+          status: a.status ?? 1,
+          beca: a.beca ?? 0,
+          observaciones: a.observaciones ?? "",
+        }));
+      } catch (e) {
+        console.error(e);
+        Swal.fire("Error", "No se pudo cargar el alumno", "error");
+      } finally {
+        if (active) setCargando(false);
+      }
     }
-  }, [selectedUser]);
+    load();
+    return () => {
+      active = false;
+    };
+  }, [alumnoId]);
 
-  // 2️⃣ Manejo de cambios en inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData((s) => ({ ...s, [name]: value }));
   };
 
-  // 3️⃣ Guardar cambios
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!alumnoId) {
+      Swal.fire("Error", "ID de alumno inválido", "error");
+      return;
+    }
     setLoading(true);
-
     try {
-      await updateAlumno(selectedUser, formData);
+      const payload = {
+        ...formData,
+        fecha_nac: normalizeFecha(formData.fecha_nac),
+      };
+
+      // Si tu backend NO tiene 'apellido', elimínalo del payload:
+      // delete payload.apellido;
+
+      await updateAlumno(payload, alumnoId); // <— orden correcto (payload, id)
+
       Swal.fire("¡Éxito!", "Alumno actualizado correctamente", "success");
-      setView("allAlumnos"); // Volver a la lista
-    } catch (error) {
-      console.error("Error al actualizar alumno:", error);
-      Swal.fire("Error", "No se pudo actualizar el alumno", "error");
+      onSaved?.(); // refresca tabla o navega
+    } catch (e) {
+      console.error(e);
+      const msg =
+        e?.data?.message ||
+        e?.message ||
+        "No se pudo actualizar el alumno";
+      Swal.fire("Error", msg, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  if (cargando) {
+    return <div className="p-4 text-gray-500">Cargando alumno…</div>;
+  }
+
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold mb-4">Editar Alumno</h2>
-      <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-        
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Ajusta estos inputs a tu UI actual */}
+      <div>
+        <label className="block text-sm mb-1">Nombre</label>
         <input
-          type="text"
           name="nombre"
           value={formData.nombre}
           onChange={handleChange}
-          placeholder="Nombre"
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
           required
         />
+      </div>
 
+      <div>
+        <label className="block text-sm mb-1">Apellido</label>
         <input
-          type="date"
-          name="fecha_nac"
-          value={formData.fecha_nac}
+          name="apellido"
+          value={formData.apellido}
           onChange={handleChange}
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
         />
+      </div>
 
+      <div>
+        <label className="block text-sm mb-1">Celular</label>
         <input
-          type="text"
           name="celular"
           value={formData.celular}
           onChange={handleChange}
-          placeholder="Celular"
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
         />
+      </div>
 
+      <div>
+        <label className="block text-sm mb-1">Teléfono</label>
         <input
-          type="text"
-          name="tutor"
-          value={formData.tutor}
-          onChange={handleChange}
-          placeholder="Tutor"
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="text"
-          name="tutor_2"
-          value={formData.tutor_2}
-          onChange={handleChange}
-          placeholder="Tutor 2"
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="text"
           name="telefono"
           value={formData.telefono}
           onChange={handleChange}
-          placeholder="Teléfono"
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
         />
+      </div>
 
+      <div>
+        <label className="block text-sm mb-1">Correo</label>
         <input
-          type="text"
-          name="telefono_2"
-          value={formData.telefono_2}
+          type="email"
+          name="correo"
+          value={formData.correo}
           onChange={handleChange}
-          placeholder="Teléfono 2"
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
         />
+      </div>
 
-        <textarea
-          name="hist_medico"
-          value={formData.hist_medico}
+      <div>
+        <label className="block text-sm mb-1">Fecha de nacimiento</label>
+        <input
+          type="date"
+          name="fecha_nac"
+          value={formData.fecha_nac || ""}
           onChange={handleChange}
-          placeholder="Historial Médico"
-          className="border p-2 rounded col-span-2"
+          className="w-full border rounded px-3 py-2"
         />
+      </div>
 
+      <div>
+        <label className="block text-sm mb-1">Estatus</label>
         <select
           name="status"
           value={formData.status}
           onChange={handleChange}
-          className="border p-2 rounded"
+          className="w-full border rounded px-3 py-2"
         >
           <option value={1}>Activo</option>
           <option value={0}>Inactivo</option>
         </select>
+      </div>
 
-        <input
-          type="number"
-          step="0.01"
-          name="beca"
-          value={formData.beca}
-          onChange={handleChange}
-          placeholder="Beca"
-          className="border p-2 rounded"
-        />
-
-        <div className="col-span-2 flex gap-4 mt-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Guardando..." : "Guardar"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("allAlumnos")}
-            className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+      <div className="flex gap-2 pt-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+        >
+          {loading ? "Guardando..." : "Guardar"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onCancel?.()}
+          className="px-4 py-2 rounded border"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
