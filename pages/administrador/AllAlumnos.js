@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
 import AlumnosTable from "components/Alumnos/AlumnosTable";
 import Admin from "layouts/Admin.js";
 
@@ -13,32 +12,38 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
   const [fetchedAlumnos, setFetchedAlumnos] = useState([]);
   const [selectedUser, setSelectedUserState] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
-  const BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
-  const getAlumnos = async (newStatus = status) => {
+  const BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+  const ENDPOINT = `${BASE}/api/alumnos/datos-combinados`;
+
+  async function getAlumnos(newStatus = 1) {
     try {
-      const url = `${BASE}/alumnos/datos-combinados?status=${newStatus}`;
-      const res = await fetch(url);
+      const url = `${ENDPOINT}?status=${newStatus}`;
+      console.log("[GET alumnos] ->", url);
+
+      const headers = {};
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(url, { headers, credentials: "omit" }); // <- omit si no usas cookies
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw = await res.json();
-
-      console.log("[GET alumnos]", { newStatus, raw });
-      const rows = Array.isArray(raw) ? raw : (raw.data ?? raw.alumnos ?? raw.results ?? []);
-      setAlumnos(rows || []);
-      setFetchedAlumnos(rows || []);
-    } catch (err) {
-      console.error("Error al obtener alumnos:", err);
-      setAlumnos([]);
-      setFetchedAlumnos([]);
-      Swal.fire("Error", "No se pudieron cargar los alumnos.", "error");
+      return await res.json();
+    } catch (e) {
+      console.error("Error al obtener alumnos:", e);
+      Swal.fire("Error", "No se pudo cargar la lista de alumnos.", "error");
+      return { data: [] };
     }
-  };
+  }
 
-  // cuando cambias de ACTIVO <-> INACTIVO, limpia búsqueda y vuelve a pedir
+  // recarga al cambiar Activo/Inactivo
   useEffect(() => {
     setSearchText("");
-    getAlumnos(status);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    (async () => {
+      const raw = await getAlumnos(status);
+      const list = raw?.data ?? raw ?? []; // adapta según tu backend
+      setFetchedAlumnos(list);
+      setAlumnos(list);
+    })();
   }, [status]);
 
   // filtro por búsqueda
@@ -46,7 +51,7 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
     const q = searchText.trim().toLowerCase();
     if (!q) return setAlumnos(fetchedAlumnos);
     setAlumnos(
-      fetchedAlumnos.filter(a =>
+      fetchedAlumnos.filter((a) =>
         [
           a.nombre ?? "",
           a.apellido ?? "",
@@ -54,7 +59,10 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
           a.celular ?? "",
           a.telefono ?? "",
           String(a.id_alumno ?? ""),
-        ].join(" ").toLowerCase().includes(q)
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
       )
     );
   }, [searchText, fetchedAlumnos]);
@@ -73,14 +81,14 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
     if (!ask.isConfirmed) return;
 
     try {
+      // OJO: si tu ruta de alta/baja está bajo /api, agrega /api aquí también.
       const url = `${BASE}/alumnos/${selectedUser}/${accion.toLowerCase()}`;
-      const res = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" }});
+      const res = await fetch(url, { method: "PUT", headers: { "Content-Type": "application/json" } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await res.json();
 
       Swal.fire("Listo", `Alumno ${accion.toLowerCase()} correctamente`, "success");
 
-      // mueve de pestaña si aplica y resalta
       if (accion === "Baja" && status === 1) {
         setStatus(0);
         setHighlightId(selectedUser);
@@ -88,8 +96,7 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
         setStatus(1);
         setHighlightId(selectedUser);
       } else {
-        // si no cambió de pestaña, quítalo de la lista actual
-        setAlumnos(prev => prev.filter(a => a.id_alumno !== selectedUser));
+        setAlumnos((prev) => prev.filter((a) => a.id_alumno !== selectedUser));
       }
 
       setTimeout(() => setHighlightId(null), 3000);
@@ -111,7 +118,10 @@ export default function AllAlumnos({ setView, setSelectedUser }) {
           status={status}
           setStatus={setStatus}
           setView={setView}
-          setSelectedUser={(id) => { setSelectedUserState(id); setSelectedUser(id); }}
+          setSelectedUser={(id) => {
+            setSelectedUserState(id);
+            setSelectedUser(id);
+          }}
           highlightId={highlightId}
         />
       </div>

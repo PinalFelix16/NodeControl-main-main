@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from "react";
+// <-- PROTOCOLO ROJO: archivo completo actualizado
+import React, { useState, useEffect, useRef } from "react"; // <-- PROTOCOLO ROJO: useRef añadido
 import { useRouter } from "next/router";
 
 import Admin from "layouts/Admin.js";
 
 import Modal from "components/Alumnos/modals/AddUserModal";
-import AllMaestros from "./AllMaestros";
-import AddMaestros from "./AddMaestro";
-import EditMaestro from "./EditMaestro";
-import ShowMaestro from "./ShowMaestro";
+import AllMaestros from "./maestros/AllMaestros";
+import AddMaestros from "./maestros/AddMaestros";
+import EditMaestro from "./maestros/EditMaestro";
+// import ShowMaestro from "./maestros/ShowMaestro";
 
-import { bajaAlumno, altaAlumno } from "services/api/alumnos"; 
-// Si tienes endpoints específicos para maestros, cámbialos aquí
+import { updateMaestro } from "services/api/maestros";
 
 export default function Maestros() {
   const [view, setView] = useState("Table"); // Table, AddUser, EditUser, ShowUser
@@ -19,6 +19,8 @@ export default function Maestros() {
   const [title, setTitle] = useState("");
 
   const router = useRouter();
+
+  const allMaestrosRef = useRef(null); // <-- PROTOCOLO ROJO: referencia al hijo
 
   useEffect(() => {
     // Validación de login en cliente
@@ -48,10 +50,13 @@ export default function Maestros() {
     setTitle("");
   };
 
+  // ---- Usar updateMaestro(status) ----
   const handleBaja = async (id) => {
     try {
-      const response = await bajaAlumno(id);
-      alert(response.message || response.error || "Operación completada.");
+      const res = await updateMaestro({ status: 0 }, id);
+      if (res?.error) throw new Error(res.error);
+      alert("Maestro dado de baja.");
+      allMaestrosRef.current?.reloadData(); // <-- PROTOCOLO ROJO: refrescar lista
     } catch (err) {
       console.error(err);
       alert("Error al dar de baja.");
@@ -60,8 +65,10 @@ export default function Maestros() {
 
   const handleAlta = async (id) => {
     try {
-      const response = await altaAlumno(id);
-      alert(response.message || response.error || "Operación completada.");
+      const res = await updateMaestro({ status: 1 }, id);
+      if (res?.error) throw new Error(res.error);
+      alert("Maestro dado de alta.");
+      allMaestrosRef.current?.reloadData(); // <-- PROTOCOLO ROJO: refrescar lista
     } catch (err) {
       console.error(err);
       alert("Error al dar de alta.");
@@ -88,6 +95,7 @@ export default function Maestros() {
           </button>
 
           <AllMaestros
+            ref={allMaestrosRef}             // <-- PROTOCOLO ROJO: pasar ref
             title={title}
             setView={setView}
             setSelectedUser={setSelectedUser}
@@ -98,7 +106,7 @@ export default function Maestros() {
 
       {view === "AddUser" && <AddMaestros setView={setView} />}
       {view === "EditUser" && <EditMaestro setView={setView} selectedUser={selectedUser} />}
-      {view === "ShowUser" && <ShowMaestro selectedUser={selectedUser} setView={setView} />}
+      {/* {view === "ShowUser" && <ShowMaestro selectedUser={selectedUser} setView={setView} />} */}
     </>
   );
 }
