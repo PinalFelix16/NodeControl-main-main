@@ -2,27 +2,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  fetchAlumnoAllData,
-  updateAlumno,
-} from "services/api/alumnos";
-
-// Si usas sweetalert2:
+import { fetchAlumnoAllData, updateAlumno } from "services/api/alumnos";
 import Swal from "sweetalert2";
 
 function getAlumnoId(input) {
   if (input == null) return null;
   if (typeof input === "number" || typeof input === "string") return input;
-  // soporta distintas formas que has usado en el proyecto:
   return input.id_alumno ?? input.id ?? null;
 }
 
 function normalizeFecha(fecha) {
-  // Acepta "YYYY-MM-DD", Date, o algo parseable por Date
   if (!fecha) return null;
-  if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    return fecha;
-  }
+  if (typeof fecha === "string" && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha;
   const d = new Date(fecha);
   if (Number.isNaN(d.getTime())) return null;
   const y = d.getFullYear();
@@ -36,25 +27,25 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
   const [cargando, setCargando] = useState(true);
   const [formData, setFormData] = useState({
     nombre: "",
-    apellido: "", // si tu tabla no lo usa, quítalo del payload en submit
+    apellido: "",
     celular: "",
     telefono: "",
     tutor: "",
     tutor_2: "",
     telefono_2: "",
     correo: "",
-    fecha_nac: "",
-    status: 1, // o "Activo"/"Inactivo" según tu UI
-    beca: 0,
+    fecha_nac: "",        // en el form usamos fecha_nac; el backend la mapea a fecha_nacimiento
+    status: 1,
+    beca: "",
+    hist_medico: "",
     observaciones: "",
-    // agrega aquí el resto de campos que tenga tu formulario
   });
 
   const alumnoId = useMemo(() => getAlumnoId(selectedUser), [selectedUser]);
 
   useEffect(() => {
     let active = true;
-    async function load() {
+    (async () => {
       if (!alumnoId) {
         setCargando(false);
         return;
@@ -62,10 +53,9 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
       try {
         setCargando(true);
         const data = await fetchAlumnoAllData(alumnoId);
-        // El backend puede responder { alumno: {...} } o solo {...}
         const a = data?.alumno ?? data ?? {};
 
-        // Mapeo defensivo para no romper si faltan llaves:
+        if (!active) return;
         setFormData((prev) => ({
           ...prev,
           nombre: a.nombre ?? "",
@@ -76,9 +66,11 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
           tutor_2: a.tutor_2 ?? "",
           telefono_2: a.telefono_2 ?? "",
           correo: a.correo ?? "",
-          fecha_nac: a.fecha_nac ? normalizeFecha(a.fecha_nac) : "",
-          status: a.status ?? 1,
-          beca: a.beca ?? 0,
+          // La BD tiene "fecha_nacimiento". Si viene, la mostramos como fecha_nac en el form:
+          fecha_nac: normalizeFecha(a.fecha_nacimiento ?? a.fecha_nac) || "",
+          status: typeof a.status === "number" ? a.status : Number(a.status ?? 1),
+          beca: a.beca ?? "", // dejamos string para que el input numérico lo muestre tal cual
+          hist_medico: a.hist_medico ?? "",
           observaciones: a.observaciones ?? "",
         }));
       } catch (e) {
@@ -87,16 +79,21 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
       } finally {
         if (active) setCargando(false);
       }
-    }
-    load();
-    return () => {
-      active = false;
-    };
+    })();
+    return () => { active = false; };
   }, [alumnoId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((s) => ({ ...s, [name]: value }));
+    // Convertimos status inmediatamente a número para no mandar "1"/"0" como string
+    if (name === "status") {
+      setFormData((s) => ({ ...s, status: Number(value) }));
+    } else if (name === "beca") {
+      // permitimos vacío; si no está vacío, guardamos el string y lo convertimos en submit
+      setFormData((s) => ({ ...s, beca: value }));
+    } else {
+      setFormData((s) => ({ ...s, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -109,22 +106,27 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
     try {
       const payload = {
         ...formData,
-        fecha_nac: normalizeFecha(formData.fecha_nac),
+        fecha_nac: normalizeFecha(formData.fecha_nac),           // el backend la mapea a fecha_nacimiento
+        status: Number(formData.status),                         // 0/1
+        beca:
+          formData.beca === "" || formData.beca === null
+            ? null
+            : Number(formData.beca),                             // numeric o null
       };
 
-      // Si tu backend NO tiene 'apellido', elimínalo del payload:
+      // Si tu BD NO tiene 'apellido', descomenta:
       // delete payload.apellido;
 
-      await updateAlumno(payload, alumnoId); // <— orden correcto (payload, id)
+      await updateAlumno(payload, alumnoId);
 
       Swal.fire("¡Éxito!", "Alumno actualizado correctamente", "success");
-      onSaved?.(); // refresca tabla o navega
+      onSaved?.();
     } catch (e) {
       console.error(e);
-      const msg =
-        e?.data?.message ||
-        e?.message ||
-        "No se pudo actualizar el alumno";
+      // intenta mostrar el primer mensaje de validación si viene del backend
+      const first =
+        e?.data?.errors && Object.values(e.data.errors)[0]?.[0];
+      const msg = first || e?.data?.message || e?.message || "No se pudo actualizar el alumno";
       Swal.fire("Error", msg, "error");
     } finally {
       setLoading(false);
@@ -137,7 +139,6 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Ajusta estos inputs a tu UI actual */}
       <div>
         <label className="block text-sm mb-1">Nombre</label>
         <input
@@ -198,6 +199,22 @@ export default function EditForm({ selectedUser, onSaved, onCancel }) {
           value={formData.fecha_nac || ""}
           onChange={handleChange}
           className="w-full border rounded px-3 py-2"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="beca" className="block text-sm mb-1">
+          Beca (% o monto)
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          id="beca"
+          name="beca"
+          value={formData.beca ?? ""}
+          onChange={handleChange}
+          className="w-full border rounded px-3 py-2"
+          placeholder="Ej. 15 o 0.00"
         />
       </div>
 

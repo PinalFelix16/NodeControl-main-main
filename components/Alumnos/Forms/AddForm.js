@@ -20,11 +20,16 @@ function toISO(d) {
   return d;
 }
 
+const isEmail = (v) =>
+  !!v &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
 export default function AddForm({ setView }) {
   const initialFormData = {
     nombre: "",
     fecha_nac: "",
     celular: "",
+    correo: "",          // ← agregado
     tutor: "",
     tutor_2: "",
     telefono: "",
@@ -44,6 +49,17 @@ export default function AddForm({ setView }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validación rápida de correo (opcional pero útil)
+    if (formData.correo && !isEmail(formData.correo)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Correo inválido",
+        text: "Por favor ingresa un correo electrónico válido.",
+      });
+      return;
+    }
+
     setLoading(true);
 
     const { nombre, apellido } = splitNombreApellido(formData.nombre);
@@ -55,9 +71,10 @@ export default function AddForm({ setView }) {
       telefono_2: formData.telefono_2 || "",
       tutor: formData.tutor || "",
       tutor_2: formData.tutor_2 || "",
-      fecha_nacimiento: toISO(formData.fecha_nac),
+      correo: formData.correo || "",                        // ← agregado al payload
+      fecha_nacimiento: toISO(formData.fecha_nac),          // backend usa fecha_nacimiento
       hist_medico: formData.hist_medico || "",
-      beca: formData.beca || "0.00",
+      beca: formData.beca === "" ? null : String(formData.beca),
       status: Number(formData.status) || 1,
     };
 
@@ -81,10 +98,15 @@ export default function AddForm({ setView }) {
       }
     } catch (err) {
       console.error(err);
+      // Si tu backend valida unique:alumnos,correo, aquí puede salir 422 por correo duplicado
+      const msg =
+        err?.data?.errors && Object.values(err.data.errors)[0]?.[0]
+          ? Object.values(err.data.errors)[0][0]
+          : "Ocurrió un error al guardar el alumno.";
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Ocurrió un error al guardar el alumno.",
+        text: msg,
       });
     } finally {
       setLoading(false);
@@ -150,6 +172,38 @@ export default function AddForm({ setView }) {
                     placeholder="Celular"
                     value={formData.celular}
                     onChange={handleChange}
+                  />
+                </div>
+
+                {/* Correo (nuevo) */}
+                <div className="relative w-full mb-3">
+                  <label className="block uppercase text-blueGray-600 text-xs font-bold mb-2" htmlFor="correo">
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    id="correo"
+                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    placeholder="ejemplo@correo.com"
+                    value={formData.correo}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                {/* Beca */}
+                <div className="mb-4">
+                  <label htmlFor="beca" className="block text-gray-700 font-bold mb-2">
+                    Beca (% o monto)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="beca"
+                    name="beca"
+                    value={formData.beca ?? ""}
+                    onChange={(e) => setFormData({ ...formData, beca: e.target.value })}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    placeholder="Ej. 15 o 0.00"
                   />
                 </div>
 
@@ -236,6 +290,7 @@ export default function AddForm({ setView }) {
                 </div>
 
                 {/* Botón */}
+                 {/* Botón */}
                 <div className="text-center mt-6">
                   <button
                     className="bg-blueGray-800 text-white active:bg-blueGray-600 text-sm font-bold px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 w-full ease-linear transition-all duration-150"
