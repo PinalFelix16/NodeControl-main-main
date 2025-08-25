@@ -1,23 +1,20 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import UserDropdown from "components/Dropdowns/UserDropdown.js";
+// import UserDropdown from "components/Dropdowns/UserDropdown.js";
 
 export default function Navbar() {
-  // 1. Crea un estado para guardar el tipo de usuario y si es superadmin
   const [userType, setUserType] = useState("");
   const [isSuperadmin, setIsSuperadmin] = useState(false);
 
-  // 2. Solo accede a localStorage dentro de useEffect
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // Aquí toma de localStorage el usuario completo si está disponible
       const userRaw = localStorage.getItem("usuario");
       if (userRaw) {
         try {
           const user = JSON.parse(userRaw);
           setUserType(user.permisos || "");
           setIsSuperadmin(user.permisos === "SUPERADMINISTRADOR");
-        } catch (e) {
+        } catch {
           setUserType("");
           setIsSuperadmin(false);
         }
@@ -30,21 +27,21 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Navbar */}
       <nav className="absolute top-0 left-0 w-full z-10 bg-transparent md:flex-row md:flex-nowrap md:justify-start flex items-center p-4">
         <div className="w-full mx-auto items-center flex justify-between md:flex-nowrap flex-wrap md:px-10 px-4">
           {/* Brand */}
           <a
             className="text-white text-sm uppercase hidden lg:inline-block font-semibold"
-            href="#pablo"
-            onClick={e => e.preventDefault()}
+            href="#"
+            onClick={(e) => e.preventDefault()}
           >
             {userType}
           </a>
-          {/* Form */}
+
+          {/* Buscador */}
           <form className="md:flex hidden flex-row flex-wrap items-center lg:ml-auto mr-3">
             <div className="relative flex w-full flex-wrap items-stretch">
-              <span className="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
+              <span className="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
                 <i className="fas fa-search"></i>
               </span>
               <input
@@ -54,22 +51,23 @@ export default function Navbar() {
               />
             </div>
           </form>
-          {/* Botón sólo para SUPERADMINISTRADOR */}
+
+          {/* Botón SOLO para superadmin — VERDE */}
           {isSuperadmin && (
             <Link href="/administrador/usuarios" className="ml-4">
               <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition shadow"
                 type="button"
+                className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
+                           text-white px-4 py-2 rounded font-bold transition shadow"
               >
-                Agregar Usuario
+                Agregar usuario
               </button>
             </Link>
           )}
-          {/* Si quieres mantener el dropdown, lo puedes dejar; si no, elimínalo */}
+
           {/* <UserDropdown /> */}
         </div>
       </nav>
-      {/* End Navbar */}
     </>
   );
 }

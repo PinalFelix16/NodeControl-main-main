@@ -3,15 +3,35 @@ import Admin from "layouts/Admin.js";
 import { fetchClases } from "services/api/clases";
 import ClasesCard from "components/Clases/ClasesCard";
 
-export default function AllClases({ onClickEvent, setView, setSelectedUser = () => {}, handleDelete, title, isStudent = false, programasAlumno = [] }) {
+export default function AllClases({
+  onClickEvent,
+  setView,
+  setSelectedUser = () => {},
+  handleDelete,
+  title,
+  isStudent = false,
+  programasAlumno = []
+}) {
   const [programas, setProgramas] = useState([]);
+
+  const normalizePrograms = (list) =>
+    (Array.isArray(list) ? list : [])
+      .map((p) => ({
+        ...p,
+        clases: Array.isArray(p.clases)
+          ? p.clases.filter((c) => c && c.id_clase != null)
+          : [],
+      }))
+      .filter((p) => p.clases.length > 0);
 
   useEffect(() => {
     async function getProgramas() {
       const data = await fetchClases();
-      const filteredProgramas = data.filter(programa =>
-        !programasAlumno.some(alumnoPrograma =>
-          alumnoPrograma.id_programa === programa.id_programa
+      const filteredProgramas = normalizePrograms(
+        data.filter((programa) =>
+          !programasAlumno.some(
+            (al) => al.id_programa === programa.id_programa
+          )
         )
       );
       setProgramas(filteredProgramas);
@@ -24,7 +44,7 @@ export default function AllClases({ onClickEvent, setView, setSelectedUser = () 
       <div className="flex flex-wrap mt-0">
         <div className="flex flex-wrap items-center w-full">
           <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-            <h3 className={"font-semibold text-2xl " + ("color" === "light" ? "text-blueGray-700" : "text-white")}>
+            <h3 className={"font-semibold text-2xl text-blueGray-700"}>
               Lista de clases
             </h3>
             {!isStudent && (
@@ -40,25 +60,50 @@ export default function AllClases({ onClickEvent, setView, setSelectedUser = () 
         </div>
         <div className="w-full mb-12 px-4">
           <div className="px-4 md:px-10 mx-auto w-full">
-            <div>
-              <div className="flex flex-wrap">
-                {programas?.map((element, index) => {
-                  return (
-                    <div onClick={() => { onClickEvent(element.id_programa); }} className="w-full lg:w-6/12 px-4 py-2 mb-2 hover:bigger" key={index} style={{ cursor: "pointer" }}>
-                      <ClasesCard
-                        statSubtitle={element.nombre_programa}
-                        statTitle="Baby Dance Group A"
-                        statPercent={element.mensualidad}
-                        statSchedule={element.clases}
-                        handleDelete={handleDelete}
-                      />
-                    
+            <div className="flex flex-wrap">
+              {programas.map((element) => {
+                const safeClases = Array.isArray(element.clases)
+                  ? element.clases.filter((c) => c && c.id_clase != null)
+                  : [];
+                if (safeClases.length === 0) return null;
 
-                    </div>
-                  );
-                })}
-                {programas.length === 0 && (<p>No hay clases disponibles</p>)}
-              </div>
+                const key = String(element.id_programa ?? `p-${element.nombre_programa}`);
+
+                return (
+                  <div
+                    onClick={() => { onClickEvent && onClickEvent(element.id_programa); }}
+                    className="w-full lg:w-6/12 px-4 py-2 mb-2 hover:bigger"
+                    key={key}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <ClasesCard
+                      statSubtitle={element.nombre_programa}
+                      statTitle="Baby Dance Group A"
+                      statPercent={element.mensualidad}
+                      statSchedule={safeClases}
+                      onEdit={(id_clase) => {
+                        if (!id_clase) return alert("Esta clase no tiene id_clase.");
+                        setSelectedUser(id_clase);
+                        setView('EditUser');
+                      }}
+                      onDelete={(id_clase) => {
+                        if (!id_clase) return alert("Esta clase no tiene id_clase.");
+                        // si te pasan handleDelete (llama API), además limpia UI local:
+                        if (handleDelete) handleDelete(id_clase);
+                        setProgramas((prev) =>
+                          prev
+                            .map((p) => ({
+                              ...p,
+                              clases: (p.clases || []).filter((c) => c.id_clase !== id_clase),
+                            }))
+                            .filter((p) => (p.clases || []).length > 0)
+                        );
+                      }}
+                    />
+                  </div>
+                );
+              })}
+              {programas.length === 0 && (<p>No hay clases disponibles</p>)}
             </div>
           </div>
         </div>

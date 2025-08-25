@@ -1,55 +1,77 @@
 // services/api/maestros.js
 
-// Normaliza BASE_URL para que SIEMPRE termine en /api
-const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"; // <-- PROTOCOLO ROJO: LÍNEA CORREGIDA
-const BASE_URL = (() => {                                                    // <-- PROTOCOLO ROJO: LÍNEA AÑADIDA
-  const trimmed = RAW_BASE.replace(/\/+$/, "");                              // <-- PROTOCOLO ROJO: LÍNEA AÑADIDA
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;              // <-- PROTOCOLO ROJO: LÍNEA AÑADIDA
-})();                                                                        // <-- PROTOCOLO ROJO: LÍNEA AÑADIDA
+// ===== Base URL normalizada =====
+const RAW  = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const ROOT = RAW.replace(/\/+$/, "");
+export const API_BASE = ROOT.endsWith("/api") ? ROOT : `${ROOT}/api`;
 
-/**
- * Lista maestros (opcional ?status=0|1)
- */
+// ===== Token (opcional) =====
+const TOKEN_KEY = "token";
+const getToken = () => (typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null);
+const authHeaders = () => {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+};
+
+// ===== Helper =====
+async function requestJSON(url, opts = {}) {
+  const { headers, ...rest } = opts;
+  const res = await fetch(url, {
+    credentials: "omit",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "pragma": "no-cache",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      ...(headers || {}),
+      ...authHeaders(),
+    },
+    ...rest,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+  return data ?? null;
+}
+
+// Normaliza respuesta: [], {data: []}, {maestros: []}
+function normalizeList(x) {
+  if (Array.isArray(x)) return x;
+  if (x && Array.isArray(x.data)) return x.data;
+  if (x && Array.isArray(x.maestros)) return x.maestros;
+  return [];
+}
+
+// ============ API ============
 export async function fetchMaestros(status = "") {
-  const url = `${BASE_URL}/maestros${status !== "" && status !== null ? `?status=${status}` : ""}`; // <-- PROTOCOLO ROJO: LÍNEA CORREGIDA
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`Error fetching data (${res.status})`);
-  return res.json();
+  const q = status !== "" && status !== null && status !== undefined ? `?status=${status}` : "";
+  try {
+    const raw = await requestJSON(`${API_BASE}/maestros${q}`);
+    return normalizeList(raw);
+  } catch (e) {
+    console.warn("[fetchMaestros] fallback []:", e?.message || e);
+    return [];
+  }
 }
 
-/**
- * Obtiene un maestro por id
- */
 export async function fetchMaestroAllData(id) {
-  const res = await fetch(`${BASE_URL}/maestros/${id}`, { headers: { Accept: "application/json" } }); // <-- PROTOCOLO ROJO
-  if (!res.ok) throw new Error(`Error fetching maestro (${res.status})`);
-  return res.json();
+  if (id == null) throw new Error("id maestro requerido");
+  return requestJSON(`${API_BASE}/maestros/${id}`);
 }
 
-/**
- * Crea maestro
- */
 export async function storeMaestro(payload) {
-  const res = await fetch(`${BASE_URL}/maestros`, {
+  return requestJSON(`${API_BASE}/maestros`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data?.message || "Error al crear maestro" };
-  return data;
 }
 
-/**
- * Actualiza maestro
- */
 export async function updateMaestro(payload, id) {
-  const res = await fetch(`${BASE_URL}/maestros/${id}`, {
+  if (id == null) throw new Error("id maestro requerido");
+  return requestJSON(`${API_BASE}/maestros/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) return { error: data?.message || "Error al actualizar maestro" };
-  return data;
 }

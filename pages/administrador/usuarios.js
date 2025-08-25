@@ -18,15 +18,10 @@ function RegisterUserForm({ onUserCreated }) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
       },
-      body: JSON.stringify({
-        usuario,
-        nombre,
-        password,
-        permisos
-      }),
+      body: JSON.stringify({ usuario, nombre, password, permisos }),
     });
 
     const result = await res.json();
@@ -39,23 +34,56 @@ function RegisterUserForm({ onUserCreated }) {
       setError("");
       if (onUserCreated) onUserCreated();
     } else {
-      // Personaliza el mensaje aquí si quieres
       setError(result.message || "Error al crear usuario");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border rounded-lg shadow-lg bg-white max-w-md mb-10 flex flex-col gap-2">
+    <form
+      onSubmit={handleSubmit}
+      className="p-4 border rounded-lg shadow-lg bg-white max-w-md mb-10 flex flex-col gap-2"
+    >
       <h2 className="font-bold mb-2">Registrar nuevo usuario</h2>
       {error && <div className="text-red-500 mb-2">{error}</div>}
-      <input value={usuario} onChange={e => setUsuario(e.target.value)} placeholder="Usuario" required className="mb-2 px-2 py-1 border rounded w-full" />
-      <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre" required className="mb-2 px-2 py-1 border rounded w-full" />
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Contraseña" required className="mb-2 px-2 py-1 border rounded w-full" />
-      <select value={permisos} onChange={e => setPermisos(e.target.value)} className="mb-2 px-2 py-1 border rounded w-full">
+
+      <input
+        value={usuario}
+        onChange={(e) => setUsuario(e.target.value)}
+        placeholder="Usuario"
+        required
+        className="mb-2 px-2 py-1 border rounded w-full"
+      />
+      <input
+        value={nombre}
+        onChange={(e) => setNombre(e.target.value)}
+        placeholder="Nombre"
+        required
+        className="mb-2 px-2 py-1 border rounded w-full"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Contraseña"
+        required
+        className="mb-2 px-2 py-1 border rounded w-full"
+      />
+
+      <select
+        value={permisos}
+        onChange={(e) => setPermisos(e.target.value)}
+        className="mb-2 px-2 py-1 border rounded w-full"
+      >
         <option value="ADMINISTRADOR">ADMINISTRADOR</option>
         <option value="SUPERADMINISTRADOR">SUPERADMINISTRADOR</option>
       </select>
-      <button type="submit" className="bg-green-500 hover:bg-green-600 text-black px-6 py-2 rounded font-bold transition mt-2">
+
+      {/* VERDE (emerald) + texto blanco */}
+      <button
+        type="submit"
+        className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800
+                   text-white px-6 py-2 rounded font-bold transition mt-2 shadow"
+      >
         Agregar usuario
       </button>
     </form>
@@ -72,7 +100,6 @@ function UserList() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Solo lee el token y permisos después de montar
   const [isClient, setIsClient] = useState(false);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [token, setToken] = useState(null);
@@ -90,10 +117,10 @@ function UserList() {
   const fetchUsers = () => {
     setLoading(true);
     fetch("http://localhost:8000/api/usuarios", {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setUsuarios(data);
         setLoading(false);
       });
@@ -122,8 +149,8 @@ function UserList() {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -131,7 +158,7 @@ function UserList() {
     const result = await res.json();
     if (res.ok) {
       setEditUser(null);
-      setUsuarios(usuarios.map(u => u.id === editUser.id ? result.usuario : u));
+      setUsuarios(usuarios.map((u) => (u.id === editUser.id ? result.usuario : u)));
       setError("");
       alert("Usuario actualizado");
     } else {
@@ -143,11 +170,11 @@ function UserList() {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
     const res = await fetch(`http://localhost:8000/api/usuarios/${user.id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     const result = await res.json();
     if (res.ok) {
-      setUsuarios(usuarios.filter(u => u.id !== user.id));
+      setUsuarios(usuarios.filter((u) => u.id !== user.id));
       alert("Usuario eliminado");
     } else {
       alert(result.message || "Error al eliminar usuario");
@@ -170,7 +197,7 @@ function UserList() {
           </tr>
         </thead>
         <tbody>
-          {usuarios.map(user => (
+          {usuarios.map((user) => (
             <tr key={user.id}>
               <td className="border px-2 py-1">{user.id}</td>
               <td className="border px-2 py-1">{user.usuario}</td>
@@ -200,19 +227,46 @@ function UserList() {
       </table>
 
       {editUser && (
-        <form onSubmit={handleUpdate} className="mt-4 bg-gray-50 p-4 rounded shadow max-w-md mx-auto">
+        <form
+          onSubmit={handleUpdate}
+          className="mt-4 bg-gray-50 p-4 rounded shadow max-w-md mx-auto"
+        >
           <h3 className="font-bold mb-2">Editar usuario</h3>
           {error && <div className="text-red-500 mb-2">{error}</div>}
-          <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Nombre" required className="mb-2 px-2 py-1 border rounded w-full" />
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Nueva contraseña (opcional)" className="mb-2 px-2 py-1 border rounded w-full" />
+          <input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Nombre"
+            required
+            className="mb-2 px-2 py-1 border rounded w-full"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Nueva contraseña (opcional)"
+            className="mb-2 px-2 py-1 border rounded w-full"
+          />
           {isSuperadmin && (
-            <select value={permisos} onChange={e => setPermisos(e.target.value)} className="mb-2 px-2 py-1 border rounded w-full">
+            <select
+              value={permisos}
+              onChange={(e) => setPermisos(e.target.value)}
+              className="mb-2 px-2 py-1 border rounded w-full"
+            >
               <option value="ADMINISTRADOR">ADMINISTRADOR</option>
               <option value="SUPERADMINISTRADOR">SUPERADMINISTRADOR</option>
             </select>
           )}
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Guardar cambios</button>
-          <button type="button" className="ml-2 px-4 py-2 rounded bg-gray-300" onClick={() => setEditUser(null)}>Cancelar</button>
+          <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
+            Guardar cambios
+          </button>
+          <button
+            type="button"
+            className="ml-2 px-4 py-2 rounded bg-gray-300"
+            onClick={() => setEditUser(null)}
+          >
+            Cancelar
+          </button>
         </form>
       )}
     </div>

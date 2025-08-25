@@ -1,88 +1,80 @@
-import React, { useState, useEffect  } from "react";
+// pages/administrador/programas2.js
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";
-import { bajaAlumno, altaAlumno } from "services/api/alumnos";
-import Modal from "components/Alumnos/modals/AddUserModal";
 import AllClasesPrueba from "./AllClasesPrueba";
 import AddProgramas from "./programas/AddProgramas";
 import EditProgramas from "./programas/EditProgramas.js";
 import Link from "next/link";
 
 export default function Programas2() {
-  const [view, setView] = useState('Table'); 
+  const [view, setView] = useState("All"); // All | Table | AddUser | EditUser
   const [selectedUser, setSelectedUser] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [title, setTitle] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0); // ← para recargar grilla
   const router = useRouter();
 
   useEffect(() => {
-    // Revisa si hay token en localStorage (usuario autenticado)
-    if (!localStorage.getItem("token")) {
-      router.replace("/auth/login"); // Cambia a tu ruta real si es necesario
+    if (typeof window !== "undefined" && !localStorage.getItem("token")) {
+      router.replace("/auth/login");
     }
-  }, []);
+  }, [router]);
 
-  <Link href="/administrador/usuarios">
-  <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition">
-    Agregar Usuario
-  </button>
-  </Link>
+  const isListView = view === "All" || view === "Table";
 
-  const handleDelete = (action) => {
-    setTitle(action);
-    setShowModal(true);
-  };
-
-  const handleClose = () => {
-    setShowModal(false);
-    setTitle("");
-  };
-
-  const handleConfirm = () => {
-    setShowModal(false);
-    // Lógica adicional de confirmación, si es necesario
-  };
-
-  // Definir la función onClickEvent
-  const onClickEvent = (id_programa) => {
-    console.log("Programa seleccionado:", id_programa);
-    // Lógica adicional para manejar el evento onClick
+  const handleSaved = () => {
+    // cuando EditForm guarda: regresamos y forzamos reload de la lista
+    setRefreshKey((k) => k + 1);
+    setView("All");
   };
 
   return (
-    <>
-      <Modal
-        show={showModal}
-        onClose={handleClose}
-        onConfirm={handleConfirm}
-        title={`Confirmar ${title}`}
-        message={`¿Estás seguro de que deseas dar de ${title} a este alumno?`}
-      />
-      {view === 'Table' && (
-        <div>
-          <button onClick={() => setView('AddUser')} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
-            Agregar Clase
-          </button>
-          <AllClasesPrueba 
-            onClickEvent={onClickEvent} 
-            title={title} 
-            setView={setView} 
-            setSelectedUser={setSelectedUser} 
-            handleDelete={handleDelete} 
+    <div className="px-4 md:px-10 mx-auto w-full">
+      {isListView && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">Lista de clases</h1>
+            <div className="flex gap-2">
+              <Link
+                href="/administrador/usuarios"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold transition"
+              >
+                Usuarios
+              </Link>
+              <button
+                onClick={() => {
+                  setSelectedUser(null);
+                  setView("AddUser");
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded font-bold transition"
+              >
+                Agregar Clase
+              </button>
+            </div>
+          </div>
+
+          <AllClasesPrueba
+            setView={setView}
+            setSelectedUser={setSelectedUser}
+            isStudent={false}
+            programasAlumno={[]}
+            refreshKey={refreshKey}   // ← se usa para refetch
           />
-        </div>
+        </>
       )}
-      {view === 'AddUser' && (
+
+      {view === "AddUser" && (
         <AddProgramas setView={setView} />
       )}
-      {view === 'EditUser' && (
-        <EditProgramas setView={setView} selectedUser={selectedUser} />
-      )}
-    </>
-  );
 
-  
+      {view === "EditUser" && (
+        <EditProgramas
+          setView={setView}
+          selectedUser={selectedUser}
+          onSaved={handleSaved}   // ← notifica guardado
+        />
+      )}
+    </div>
+  );
 }
 
-// Asigna el layout de administrador al componente Programas2
 Programas2.layout = Admin;
