@@ -1,4 +1,3 @@
-// services/api/programas.js
 import { API_BASE } from "./clases";
 
 const TOKEN_KEY = "token";
