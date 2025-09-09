@@ -1,6 +1,7 @@
 // components/Clases/Forms/AddForm.js
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+//import { createProgramaWithClases } from "services/api/programas";
 import { fetchMaestros } from "services/api/maestros";
 import { createProgramaWithClases } from "services/api/programas";
 
@@ -106,7 +107,7 @@ export default function AddForm({ setView }) {
 
     setSaving(true);
     try {
-      await createProgramaWithClases(payload); // <-- aquí está la magia
+      await createProgramaWithClases(payload);
       alert(`Programa creado con ${clases.length} clase(s).`);
       setView?.("Table");
     } catch (err) {
@@ -266,7 +267,7 @@ export default function AddForm({ setView }) {
             </div>
           ))}
 
-          {/* Botón Agregar clase */}
+          {/* Botón Agregar clase — ABAJO DERECHA */}
           <div className="mt-4 flex justify-end">
             <button
               type="button"

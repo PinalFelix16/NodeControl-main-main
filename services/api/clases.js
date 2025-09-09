@@ -1,8 +1,7 @@
-// services/api/clases.js
 import { fetchMaestros as _fetchMaestros } from "./maestros";
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
-  .replace(/\/+$/, ''); // quita / finales
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
+    .replace(/\/+$/, '');
 if(typeof window !== 'undefined' && !/^https?:\/\/.+/.test(API_BASE)) {
   //avisamos si la URL no parece correcta
   console.warn("API_BASE parece inválida:", API_BASE);
@@ -17,35 +16,23 @@ const authHeaders = () => {
 
 async function getJSON(url, opts = {}) {
   const { headers, ...rest } = opts;
-  try {
-    const res = await fetch(url, {
-      credentials: "omit",           // usa 'include' solo si usas cookies/Sanctum
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        pragma: "no-cache",
-        "cache-control": "no-cache, no-store, must-revalidate",
-        ...(headers || {}),
-        ...authHeaders(),
-      },
-      ...rest,
-    });
-
-    let data = null;
-    try { data = await res.json(); } catch {}
-
-    if (!res.ok) {
-      const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-    return data ?? null;
-  } catch (e) {
-    //  Aquí verás la URL exacta que está tronando
-    console.error('[fetch error]', url, e);
-    throw e;
-  }
+  const res = await fetch(url, {
+    credentials: "omit",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "pragma": "no-cache",
+      "cache-control": "no-cache, no-store, must-revalidate",
+      ...(headers || {}),
+      ...authHeaders(),
+    },
+    ...rest,
+  });
+  let data = null;
+  try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`);
+  return data ?? null;
 }
-
 
 // ===== ALUMNOS =====
 export async function fetchExpedienteAlumno(id_alumno) {
