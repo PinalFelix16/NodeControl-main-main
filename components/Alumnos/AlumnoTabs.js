@@ -7,6 +7,7 @@ import AlumnoCard from "./cards/AlumnoCard";
 import ClasesCard from "./cards/ClasesCard";
 import AllClases from "pages/administrador/AllClases";
 import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
 
 const AlumnoTabs = ({ selectedUser, alumnoData }) => {
   const [openTab, setOpenTab] = React.useState(1);
@@ -142,36 +143,26 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
     typeS === 0 ? handleInscripcion(selectedUser) : handleRecargo(selectedUser);
   };
 
-const addClaseAlumno = async (id) => {
-  // busca el programa y su primera clase "plantilla"
-  const prog = (programas || []).find(p => String(p.id_programa) === String(id));
-  const claseTpl = prog?.clases?.[0];
- if (!claseTpl) {
-   alert("Ese programa no tiene clases definidas para asignar.");
-   return;
- }
+  const addClaseAlumno = async (id) => {
 
-   const data = {
-     id_alumno: selectedUser,
+    const data = {
+      id_alumno: selectedUser,
+      id_programa: id
 
-   id_programa: id,
-    id_clase: claseTpl.id_clase,
-   id_maestro: claseTpl.id_maestro ?? null
-   };
+    };
+   
+    await setModalData(data);
+    setSecondOption({
+      text: "Registrar Visita", 
+      data : data,
+      function: handleVisita2
+    });
+    setShowModal(true);
+    setTitle('¿Deseas agregar el programa seleccionado? Se agregara el adeudo correspondiente al periodo actual');
+    setTypeS(1);   
 
-   await setModalData(data);
-   setSecondOption({
-     text: "Registrar Visita",
-     data : data,
-     function: handleVisita2
-   });
-   setShowModal(true);
-   setTitle('¿Deseas agregar el programa seleccionado? Se agregara el adeudo correspondiente al periodo actual');
-   setTypeS(1);
-}
-
-
-  const handleVisita2 = () => {
+  }
+  const handleVisita2 = () =>{
     handleVisita();
   }
 
