@@ -1,0 +1,152 @@
+[33mcommit fd2cf9c6137498b63fb1cbb260ac866824b6e09d[m[33m ([m[1;36mHEAD -> [m[1;32mdev-sara[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Sep 9 10:06:19 2025 -0600
+
+    clases listo,expediente medio listo
+
+[33mcommit 0ca42772f163848b25a7415be6277ed507f4b2a3[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Mon Sep 8 12:55:46 2025 -0600
+
+    Refactor API base URL handling and improve error logging in fetch functions
+
+[33mcommit a00bf000aa74dfc26727cb29d47931f13654b701[m
+Merge: c05aaba 1ab8582
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Sep 2 09:25:33 2025 -0600
+
+    Merge branch 'main' of https://github.com/PinalFelix16/NodeControl-main-main
+
+[33mcommit c05aaba9b83edc0a9b3abdb87861b08543a4887a[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Sep 2 09:25:11 2025 -0600
+
+    nose que royo
+
+[33mcommit 1ab85829925652113aa96f14ea1ac825451111f1[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Sep 1 21:19:58 2025 -0600
+
+    clases bien corrgido
+
+[33mcommit 444112a9da56e10a0a0609e015a840bc4e7fd971[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Mon Sep 1 11:11:02 2025 -0600
+
+    no recuerdo si funciona
+
+[33mcommit 1f2ccb0fdad1818c860cdc934d717182cd103100[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Sun Aug 24 21:22:57 2025 -0600
+
+    Clases funcionando al 100
+
+[33mcommit 6c68f42005ea9de61f7fcf1d2ba9079b15e1b8e1[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Aug 11 21:24:27 2025 -0600
+
+    Maestros Funcionando
+
+[33mcommit 75f5e7e78d354385be8bc107cfa559a0da9018b3[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Aug 11 01:50:14 2025 -0600
+
+    Front Cortes Funcionando
+
+[33mcommit 1a94f3bf1a89a839d72d2e9fa7790502f5c77db2[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Aug 12 10:07:21 2025 -0600
+
+    el mero bueno
+
+[33mcommit 5dbfaf0ffe40eec3292315467f2159f550e69af5[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Aug 12 09:29:44 2025 -0600
+
+    editar y agregar alumnos
+
+[33mcommit 1ae80dcb881c85ad41d3f2a36995bf52ab602a59[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Mon Aug 11 12:26:30 2025 -0600
+
+    cambios en edit alumn y clases
+
+[33mcommit 66be60f7b5bc20e93afc9839891230be1cc3df25[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Mon Aug 11 01:04:29 2025 -0600
+
+    cambio de clases
+
+[33mcommit 14f2417961912035454dbbb59915c2b156e12813[m
+Merge: 520043c 81bb49f
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Sun Aug 10 20:18:27 2025 -0600
+
+    Merge branch 'main' of https://github.com/PinalFelix16/NodeControl-main-main
+
+[33mcommit 520043c58075ef853500bfd0b36e5f5e0d896ba6[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Sun Aug 10 20:15:52 2025 -0600
+
+    ya se ve el arreglo
+
+[33mcommit 54002280082916bd743ca4ccd7c9ba30a09cf503[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Sun Aug 10 14:56:19 2025 -0600
+
+    agregar alumnos y ver alumnos
+
+[33mcommit 81bb49f46eca452b919da2b45f9d7a868880a75f[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Sun Aug 10 14:02:23 2025 -0600
+
+    Avances de becas y descuentos
+
+[33mcommit 8b0635d76723206a5c1aa0ff6e08543a866a33da[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Thu Aug 7 17:25:36 2025 -0600
+
+    Cambios apartado cortes aun falta
+
+[33mcommit a0651ed899a10fda8ea7d93970da1ca49d017f3d[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Tue Aug 5 09:55:13 2025 -0600
+
+    Agrega login casi terminado
+
+[33mcommit 4249cdcea0c3d5cb29d38babf2a3b99d30ecd9a5[m
+Merge: 2886065 39bff2e
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Aug 4 20:17:14 2025 -0600
+
+    Merge branch 'main' into cambios-frontend-actualizados
+
+[33mcommit 39bff2ed066456b04c7901db7d26b75b32edebd1[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Mon Aug 4 16:18:13 2025 -0600
+
+    cambios
+
+[33mcommit 2886065b87d62f36ca5bac8ee09266c869d1d82b[m[33m ([m[1;31morigin/cambios-frontend-actualizados[m[33m)[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Aug 4 16:06:53 2025 -0600
+
+    Migracin de frontend actualizados
+
+[33mcommit 5aede6b6814406a4c947043a350ea08daf63d9c3[m
+Author: SaraCaloso <sarahi.caloso@g-tech.io>
+Date:   Tue Jul 29 14:12:19 2025 -0600
+
+    correccion de erroes
+
+[33mcommit abb34e82ad388269c1fac98f60eafe6c9aa02425[m
+Author: Javkerweb <mauro.sosa@gmstore.com.mx>
+Date:   Tue May 13 23:20:06 2025 -0600
+
+    ajustes de borrado
+
+[33mcommit 17913b340dada8652ebd1dc3f1c11c30fca40780[m
+Author: Carlos Pinal <19040375@itdurango.edu.mx>
+Date:   Mon Apr 21 14:31:40 2025 -0600
+
+    Proyecto subido
