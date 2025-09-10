@@ -116,11 +116,13 @@ export default function MaestrosTable({ color, maestros, status, setStatus, setV
                   {/* <i className="fas fa-circle text-emerald-500 mr-2"></i>{" "} */}
                   {maestro.nombre_maestro}
                 </td>
-                <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs  p-4">
-                    {maestro.clases.map((clase, index) => (
-                        <div key={index}>{clase}</div>
-                    ))}
-                </td>
+               <td className="bordert-t-0 px-6 align-middle border-l-0 border-r-0 text-xs  p-4">
+                    {(Array.isArray(maestro.clases) ? maestro.clases : []).map((clase, index) => (
+                   <div key={index}>{clase}</div>
+              ))}
+ 
+                  </td>
+
                 <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                   <button onClick={()=>{setView('EditUser'); setSelectedUser(maestro.id_maestro);}} title="Editar maestro" className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150  hover:text-lightBlue-500 hover:border-lightBlue-500"  type="button">
                     <i className="fas fa-user-edit text-2xl "></i>

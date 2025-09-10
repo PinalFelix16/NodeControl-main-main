@@ -21,23 +21,28 @@ const AllMaestros = forwardRef(function AllMaestros(
 
   // Fuera del useEffect para exponerlo por ref
   async function getMaestros() {
-    if (title !== "") return; // <-- PROTOCOLO ROJO: evita refrescar durante modal/acciones
+   
     const data = await fetchMaestros(status);
     setMaestros(data);
     setFetchedMaestros(data);
   }
 
-  useEffect(() => {
-    getMaestros();
-  }, [status, title]);
+useEffect(() => { getMaestros(); }, [status]); 
 
-  useEffect(() => {
-    const filtered = fetchedMaestros.filter((m) =>
-      m.nombre_maestro.toLowerCase().includes(searchText.toLowerCase()) ||
-      String(m.id_maestro).toLowerCase().includes(searchText.toLowerCase()) // <-- PROTOCOLO ROJO
+useEffect(() => {
+  const filtered = fetchedMaestros.filter(m => {
+    const nombre = m?.nombre_maestro ? m.nombre_maestro.toLowerCase() : "";
+    const id = m?.id_maestro ? String(m.id_maestro).toLowerCase() : "";
+
+    return (
+      nombre.includes(searchText.toLowerCase()) ||
+      id.includes(searchText.toLowerCase())
     );
-    setMaestros(filtered);
-  }, [searchText, fetchedMaestros]);
+  });
+
+  setMaestros(filtered);
+}, [fetchedMaestros, searchText]);
+
 
   // Exponer método reloadData() al padre
   useImperativeHandle(ref, () => ({

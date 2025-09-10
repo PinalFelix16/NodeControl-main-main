@@ -6,8 +6,8 @@ import HistorialTable from "./HistorialTable";
 import AlumnoCard from "./cards/AlumnoCard";
 import ClasesCard from "./cards/ClasesCard";
 import AllClases from "pages/administrador/AllClases";
-import { agregarAlumnoPrograma, agregarAlumnoVisita } from "services/api/clases";
-
+import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
 
 const AlumnoTabs = ({ selectedUser, alumnoData }) => {
   const [openTab, setOpenTab] = React.useState(1);
@@ -15,7 +15,6 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
   const [showModal, setShowModal] = useState(false);
   const [typeS, setTypeS] = useState(0);
   const [title, setTitle] = useState("");
-
 
   const [total, setTotal] = useState([]);
   const [pagos, setPagos] = useState([]);
@@ -27,16 +26,12 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
 
   const handlePayment = (type) => {
     setTypeS(type);
-
     const cobros = ['inscripción', 'recargo', 'visita'];
-
     if (type !== 2) setShowModal(true);
     else setShowModal(false);
-
     if (type === 4) setTitle('Deseas continuar con el cobro?');
     else setTitle('¿Deseas cobrar ' + cobros[type]);
   }
-
 
   async function getAlumno() {
     const data = await fetchAlumnosStatus(selectedUser);
@@ -44,19 +39,14 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
     const informationData = await fetchInformacionAlumno(selectedUser);
     const ClassData = await fetchProgramasAlumno(selectedUser);
 
-
-
     setTotal(data.total ?? "0.00");
     setPagos(data.data ?? []);
     setInformacion(informationData.data ?? []);
     setHistorial(historialData.data ?? []);
     setSecondOption(null);
-    
 
     if (ClassData[0] !== undefined) {
-      setProgramas(ClassData || [{
-
-      }]);
+      setProgramas(ClassData || [{}]);
     }
   }
 
@@ -64,79 +54,93 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
     getAlumno();
   }, [selectedUser]);
 
-
   const handleDelete = () => {
     setShowModal(true);
-
     setTitle('¿Deseas remover el programa seleccionado? Se eliminará el adeudo correspondiente al periodo actual');
   }
   const handleClose = () => {
     setShowModal(false);
   };
+
   const handleDoPayment = async () => {
     let clases = pagos;
     const data = {
-        cant: clases.length, // Número de elementos en tu array
-        total: clases.reduce((acc, clase) => acc + parseFloat(clase.importe || 0), 0),
-        id_alumno: selectedUser,
-        ...clases.reduce((acc, clase, index) => {
-            acc[`id_programa_${index}`] = clase.id_programa;
-            acc[`nombre_programa_${index}`] = clase.nombre_programa;
-            acc[`concepto_${index}`] = clase.concepto;
-            acc[`periodo_${index}`] = clase.periodo;
-            acc[`fecha_limite_${index}`] = clase.fecha_limite;
-            acc[`importe_${index}`] = clase.importe;
-            acc[`add${index}`] = true; // Añadir flag para agregar
-            return acc;
-        }, {})
+      cant: clases.length,
+      total: clases.reduce((acc, clase) => acc + parseFloat(clase.importe || 0), 0),
+      id_alumno: selectedUser,
+      ...clases.reduce((acc, clase, index) => {
+        acc[`id_programa_${index}`] = clase.id_programa;
+        acc[`nombre_programa_${index}`] = clase.nombre_programa;
+        acc[`concepto_${index}`] = clase.concepto;
+        acc[`periodo_${index}`] = clase.periodo;
+        acc[`fecha_limite_${index}`] = clase.fecha_limite;
+        acc[`importe_${index}`] = clase.importe;
+        acc[`add${index}`] = true;
+        return acc;
+      }, {})
     };
 
     const response = await fetch('http://localhost:8000/api/procesar-pagos', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
-    const data2 = await response.json(); 
+    const data2 = await response.json();
 
     getAlumno();
     if (response.ok) {
-        alert("El pago se hizo correctamente");
-        console.log(data2);
-        const link = document.createElement('a');
-        link.href = data2.download_link;
-        link.download = data2.download_link.split('/').pop(); // Extrae el nombre del archivo
-        link.target = '_blank'; // Abre en una nueva pestaña
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      alert("El pago se hizo correctamente");
+      const link = document.createElement('a');
+      link.href = data2.download_link;
+      link.download = data2.download_link.split('/').pop();
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } else {
-        console.error('Error al enviar los datos');
+      console.error('Error al enviar los datos');
     }
-};
-  const handleConfirm = async  () => {
+  };
+
+  const handleConfirm = async () => {
     setShowModal(false);
     setSecondOption();
-    if(typeS ===4 ) {
+
+    if (typeS === 4) {
       handleDoPayment();
       return;
     }
 
     if (typeS === 1) {
-        const response = await agregarAlumnoPrograma(modalData);
-        if (response.message != null) {
-          alert(response.message);
-        } else {
-          alert(response.error);
+      // MOD: si venimos de “Agregar clase”, asignamos las clases EXISTENTES al alumno (PUT)
+      if (Array.isArray(modalData?.claseIds) && modalData.claseIds.length) {
+        try {
+          await Promise.all(
+            modalData.claseIds.map((idc) =>
+              updateClase(idc, { alumno_id: modalData.alumno_id })
+            )
+          );
+          alert("Clases asignadas al alumno.");
+          getAlumno();
+        } catch (e) {
+          console.error(e);
+          alert(e?.message || "No se pudo asignar las clases.");
         }
-        getAlumno();
         return;
-    } 
+      }
 
-    typeS === 0 ? handleInscripcion(selectedUser)
-      : handleRecargo(selectedUser);
+      // Fallback: si llegara otro flujo que sí crea (se mantiene por compatibilidad)
+      const response = await agregarAlumnoPrograma(modalData);
+      if (response.message != null) {
+        alert(response.message);
+      } else {
+        alert(response.error);
+      }
+      getAlumno();
+      return;
+    }
 
+    typeS === 0 ? handleInscripcion(selectedUser) : handleRecargo(selectedUser);
   };
 
   const addClaseAlumno = async (id) => {
@@ -163,19 +167,19 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
   }
 
   const handleVisita = async () => {
+    // Se deja como estaba (tu endpoint de visita)
     const response = await agregarAlumnoVisita(secondOption.data.id_alumno, secondOption.data.id_programa);
-        if (response.message != null) {
-          alert(response.message);
-        } else {
-          alert(response.error);
-        }
-        getAlumno();
-        setSecondOption(null);
+    if (response.message != null) {
+      alert(response.message);
+    } else {
+      alert(response.error);
+    }
+    getAlumno();
+    setSecondOption(null);
   }
-  
+
   const handleInscripcion = async (id) => {
     const response = await postInscripcion(id);
-
     if (response.message != null) {
       alert(response.message);
     }
@@ -187,12 +191,11 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
       alert(response.message);
     }
     getAlumno();
-
   };
+
   return (
     <>
       <div className="flex flex-wrap bg-white w-full">
-
         <Modal
           show={showModal}
           onClose={handleClose}
@@ -313,7 +316,7 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
                   <button onClick={() => { handlePayment(1) }} className=" border border-solid bg-blueGray-500  font-bold text-sm px-6 py-3 rounded outline-none mr-4" type="button">
                     <i className="fas fa-dollar-sign text-emerald-500 mr-2"></i> Cobrar Recargo
                   </button>
-                 
+
                   <ExpedienteTable pagos={pagos} total={total} handlePayment={handlePayment}></ExpedienteTable>
 
                 </div>
@@ -340,7 +343,7 @@ const AlumnoTabs = ({ selectedUser, alumnoData }) => {
                                 statSchedule={element.clases}
                                 handleDelete={handleDelete}
                               />
-                              
+
                             </div>
                           );
                         })}

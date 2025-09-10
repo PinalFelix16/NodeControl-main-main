@@ -1,4 +1,3 @@
-// pages/administrador/programas2.js
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";

@@ -1,10 +1,12 @@
-// services/api/clases.js
 import { fetchMaestros as _fetchMaestros } from "./maestros";
 
-const RAW  = process.env.NEXT_PUBLIC_API_URL || "http://localhost/LaravelControl-master/public";
-const ROOT = RAW.replace(/\/+$/, "");
-export const API_BASE = ROOT.endsWith("/api") ? ROOT : `${ROOT}/api`;
-
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
+    .replace(/\/+$/, '');
+if(typeof window !== 'undefined' && !/^https?:\/\/.+/.test(API_BASE)) {
+  //avisamos si la URL no parece correcta
+  console.warn("API_BASE parece inválida:", API_BASE);
+}
+ 
 const TOKEN_KEY = "token";
 const getToken = () => (typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null);
 const authHeaders = () => {
@@ -45,8 +47,8 @@ export async function fetchProgramasAlumno(id_alumno) {
 }
 
 // ===== CLASES / PROGRAMAS =====
-export const fetchClasesRaw    = () =>
-  getJSON(`${API_BASE}/clases?status=1&_t=${Date.now()}`);
+export const fetchClasesRaw = () =>
+getJSON(`${API_BASE}/clases?status=1&_t=${Date.now()}`);
 export const fetchProgramasRaw = () => getJSON(`${API_BASE}/programas`);
 export const fetchMaestrosRaw  = () => (_fetchMaestros ? _fetchMaestros().catch(() => []) : Promise.resolve([]));
 
