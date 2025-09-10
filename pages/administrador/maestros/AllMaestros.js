@@ -27,17 +27,19 @@ const AllMaestros = forwardRef(function AllMaestros(
     setFetchedMaestros(data);
   }
 
-  useEffect(() => {
-    getMaestros();
-  }, [status, title]);
+useEffect(() => {
+  const filtered = fetchedMaestros.filter(m => {
+    const nombre = m?.nombre_maestro ? m.nombre_maestro.toLowerCase() : "";
+    const id = m?.id_maestro ? String(m.id_maestro).toLowerCase() : "";
 
-  useEffect(() => {
-    const filtered = fetchedMaestros.filter((m) =>
-      m.nombre_maestro.toLowerCase().includes(searchText.toLowerCase()) ||
-      String(m.id_maestro).toLowerCase().includes(searchText.toLowerCase()) // <-- PROTOCOLO ROJO
+    return (
+      nombre.includes(searchText.toLowerCase()) ||
+      id.includes(searchText.toLowerCase())
     );
-    setMaestros(filtered);
-  }, [searchText, fetchedMaestros]);
+  });
+
+  setMaestros(filtered);
+}, [fetchedMaestros, searchText]);
 
   // Exponer método reloadData() al padre
   useImperativeHandle(ref, () => ({
