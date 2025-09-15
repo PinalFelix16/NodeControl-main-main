@@ -5,6 +5,8 @@
 // POSTs a rutas reales del backend.
 // -------------------------------------------------------------
 
+
+
 // 1) Base correcta: sin /public y SIN duplicar /api
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
   .replace(/\/+$/, ''); // quita barras finales

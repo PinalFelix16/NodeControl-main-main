@@ -49,6 +49,7 @@ export default function ShowAlumno({setView,  selectedUser}) {
                                Nombre: {alumnoData?.nombre} <i className=" fas fa-check mx-4 text-emerald-500"></i> 
                             </h3>
                             <AlumnoTabs alumnoData={alumnoData} selectedUser={selectedUser}></AlumnoTabs>
+                            
                         </div>
                     </div>
                 </div>
