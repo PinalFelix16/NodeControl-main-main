@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import ExpedienteTable from "./ExpedienteTable";
 import Modal from "./modals/AddUserModal";
 import {
@@ -20,7 +20,7 @@ import {
 } from "services/api/clases";
 
 export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = false }) {
-  // abrir Info si hideClasses=true
+  // Abre "Información" si hideClasses=true
   const [openTab, setOpenTab] = useState(hideClasses ? 4 : 1);
   useEffect(() => {
     if (hideClasses) setOpenTab(4);
@@ -32,7 +32,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
   const [total, setTotal] = useState([]);
   const [pagos, setPagos] = useState([]);
-  const [informacion, setInformacion] = useState([]);
+  const [informacion, setInformacion] = useState([]); // puede ser objeto o arreglo
   const [programas, setProgramas] = useState([]);
   const [historial, setHistorial] = useState([]);
   const [modalData, setModalData] = useState(null);
@@ -55,7 +55,8 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
     setTotal(data.total ?? "0.00");
     setPagos(data.data ?? []);
-    setInformacion(informationData.data ?? []);
+    // 🔧 usa el objeto raíz si la API no trae { data: {...} }
+    setInformacion(informationData?.data ?? informationData ?? []);
     setHistorial(historialData.data ?? []);
     setSecondOption(null);
 
@@ -68,12 +69,27 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     getAlumno();
   }, [selectedUser]);
 
-  // ---- NORMALIZACIÓN DE DATOS PARA LA TARJETA ----
-  const alumnoInfo = useMemo(() => {
-    // 'informacion' puede venir como objeto o como arreglo
-    const info = Array.isArray(informacion) ? informacion[0] : informacion;
-    if (alumnoData && (alumnoData.nombre || alumnoData.id_alumno)) return alumnoData;
-    return info || {};
+  // Normaliza la fuente de datos para el card de información
+  const alumnoInfo = React.useMemo(() => {
+    const raw = Array.isArray(informacion) ? informacion[0] : informacion;
+
+    const base =
+      alumnoData && (alumnoData.nombre || alumnoData.id_alumno)
+        ? alumnoData
+        : raw || {};
+
+    return {
+      id_alumno:  base.id_alumno  ?? base.id ?? base.idAlumno ?? null,
+      nombre:     base.nombre     ?? base.nombre_alumno ?? "",
+      fecha_nac:  base.fecha_nac  ?? base.fecha_nacimiento ?? "",
+      celular:    base.celular    ?? base.celular_alumno ?? "",
+      telefono:   base.telefono   ?? base.telefono_1 ?? base.tel1 ?? "",
+      telefono_2: base.telefono_2 ?? base.tel2 ?? "",
+      tutor:      base.tutor      ?? base.tutor_1 ?? "",
+      tutor_2:    base.tutor_2    ?? "",
+      status:     base.status     ?? base.estado ?? "",
+      hist_medico:base.hist_medico?? base.observaciones ?? base.medico_historial ?? "",
+    };
   }, [alumnoData, informacion]);
 
   const handleDelete = () => {
@@ -134,7 +150,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     }
 
     if (typeS === 1) {
-      // asignar clases existentes al alumno
+      // Asignar clases EXISTENTES del programa al alumno (PUT /clases/{id})
       if (Array.isArray(modalData?.claseIds) && modalData.claseIds.length) {
         try {
           await Promise.all(
@@ -148,7 +164,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
         }
         return;
       }
-      // compatibilidad
+      // Compatibilidad con flujo anterior
       const response = await agregarAlumnoPrograma(modalData);
       if (response.message != null) alert(response.message);
       else alert(response.error);
@@ -170,7 +186,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
     const data = {
       alumno_id: selectedUser,
-      id_alumno: selectedUser,
+      id_alumno: selectedUser, // por compatibilidad
       id_programa: id,
       claseIds,
     };
@@ -192,11 +208,11 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
   const handleVisita = async () => {
     const response = await agregarAlumnoVisita(
-      secondOption?.data?.id_alumno,
-      secondOption?.data?.id_programa
+      secondOption.data.id_alumno,
+      secondOption.data.id_programa
     );
-    if (response?.message != null) alert(response.message);
-    else if (response?.error) alert(response.error);
+    if (response.message != null) alert(response.message);
+    else alert(response.error);
     getAlumno();
     setSecondOption(null);
   };
@@ -378,6 +394,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
                   </div>
                 )}
 
+                {/* Información */}
                 <div className={openTab === 4 ? "block" : "hidden"} id="link4">
                   <AlumnoCard
                     name={alumnoInfo?.nombre}
