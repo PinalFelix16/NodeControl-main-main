@@ -1,71 +1,113 @@
-// <-- PROTOCOLO ROJO: archivo completo actualizado
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+// pages/administrador/maestros/AllMaestros.js
+import React, {
+  useEffect,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 
-// components
 import MaestrosTable from "components/Maestros/MaestrosTable";
-
-// layout for page (este componente NO es página, así que no usaremos .layout)
-import Admin from "layouts/Admin.js";
-
 import { fetchMaestros } from "services/api/maestros";
+// 👇 usamos las clases tal como ya existen (NO tocamos nada de CRUD)
+import { fetchClasesRaw } from "services/api/clases";
 
-// Definimos el componente en una constante para poder referenciarlo si se necesitara
 const AllMaestros = forwardRef(function AllMaestros(
   { setView, setSelectedUser, handleDelete, title },
   ref
 ) {
   const [maestros, setMaestros] = useState([]);
-  const [status, setStatus] = useState(1);
+  const [status, setStatus] = useState(1); // por si en un futuro filtras activos/inactivos
   const [searchText, setSearchText] = useState("");
-  const [fetchedMaestros, setFetchedMaestros] = useState([]);
+  const [baseData, setBaseData] = useState([]);
 
-  // Fuera del useEffect para exponerlo por ref
   async function getMaestros() {
-    if (title !== "") return; // <-- PROTOCOLO ROJO: evita refrescar durante modal/acciones
-    const data = await fetchMaestros(status);
-    setMaestros(data);
-    setFetchedMaestros(data);
+    // evita recargar mientras hay modal abierto
+    if (title) return;
+
+    // 1) Traemos maestros y clases activas en paralelo
+    const [ms, clases] = await Promise.all([
+      fetchMaestros(status).catch(() => []),
+      fetchClasesRaw().catch(() => []), // ya trae ?status=1
+    ]);
+
+    // 2) Mapas por maestro
+    const countByMaestro = {};
+    const listByMaestro = {};
+
+    (Array.isArray(clases) ? clases : []).forEach((c) => {
+      const key = String(c?.id_maestro ?? c?.maestro_id ?? "");
+      if (!key) return;
+      countByMaestro[key] = (countByMaestro[key] || 0) + 1;
+
+      const nombreClase = c?.nombre ?? c?.nombre_clase ?? "";
+      if (nombreClase) {
+        (listByMaestro[key] ||= []).push(nombreClase);
+      }
+    });
+
+    // 3) Enriquecemos los maestros con clasesCount y clases (nombres)
+    const merged = (Array.isArray(ms) ? ms : []).map((m) => {
+      const id = String(m?.id_maestro ?? m?.id ?? "");
+      return {
+        ...m,
+        clasesCount: countByMaestro[id] || 0,
+        clases: listByMaestro[id] || [],
+      };
+    });
+
+    setBaseData(merged);
+    applyFilter(merged, searchText);
   }
 
-useEffect(() => {
-  const filtered = fetchedMaestros.filter(m => {
-    const nombre = m?.nombre_maestro ? m.nombre_maestro.toLowerCase() : "";
-    const id = m?.id_maestro ? String(m.id_maestro).toLowerCase() : "";
+  // Filtro por nombre o id
+  function applyFilter(data, term) {
+    const t = (term || "").toLowerCase();
+    if (!t) {
+      setMaestros(data);
+      return;
+    }
+    const filtered = data.filter((m) => {
+      const nombre = String(m?.nombre_maestro ?? m?.nombre ?? "").toLowerCase();
+      const id = String(m?.id_maestro ?? m?.id ?? "").toLowerCase();
+      return nombre.includes(t) || id.includes(t);
+    });
+    setMaestros(filtered);
+  }
 
-    return (
-      nombre.includes(searchText.toLowerCase()) ||
-      id.includes(searchText.toLowerCase())
-    );
-  });
+  // Cargar al entrar y cuando cambie status o cierre modal
+  useEffect(() => {
+    getMaestros();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, title]);
 
-  setMaestros(filtered);
-}, [fetchedMaestros, searchText]);
+  // Reaplicar filtro al escribir
+  useEffect(() => {
+    applyFilter(baseData, searchText);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchText, baseData]);
 
-  // Exponer método reloadData() al padre
+  // Exponer método para que el padre pueda refrescar
   useImperativeHandle(ref, () => ({
-    reloadData: getMaestros, // <-- PROTOCOLO ROJO
+    reloadData: getMaestros,
   }));
 
   return (
-    <>
-      <div className="flex flex-wrap mt-4">
-        <div className="w-full mb-12 px-4">
-          <MaestrosTable
-            color="dark"
-            searchText={searchText}
-            setSearchText={setSearchText}
-            maestros={maestros}
-            handleDelete={handleDelete}
-            status={status}
-            setStatus={setStatus}
-            setView={setView}
-            setSelectedUser={setSelectedUser}
-          />
-        </div>
+    <div className="flex flex-wrap mt-4">
+      <div className="w-full mb-12 px-4">
+        <MaestrosTable
+          color="dark"
+          maestros={maestros}
+          status={status}
+          setStatus={setStatus}
+          setView={setView}
+          setSelectedUser={setSelectedUser}
+          handleDelete={handleDelete}
+          searchText={searchText}
+          setSearchText={setSearchText}
+        />
       </div>
-    </>
+    </div>
   );
 });
 
 export default AllMaestros;
-// AllMaestros.layout = Admin; // <-- PROTOCOLO ROJO: LÍNEA ELIMINADA (causaba ReferenceError)

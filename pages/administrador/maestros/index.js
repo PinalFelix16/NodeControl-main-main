@@ -3,16 +3,20 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";
 import Modal from "components/Alumnos/modals/AddUserModal";
-import AllMaestros from "./maestros/AllMaestros";
-import AddMaestros from "./maestros/AddMaestros";
-import EditMaestro from "./maestros/EditMaestro";
+
+// ✅ MISMO DIRECTORIO
+import AllMaestros from "./AllMaestros";
+import AddMaestros from "./AddMaestros";
+import EditMaestro from "./EditMaestro";
+
 import { updateMaestro } from "services/api/maestros";
 
-export default function Maestros() {
-  const [view, setView] = useState("Table"); // Table, AddUser, EditUser
+function Maestros() {
+  const [view, setView] = useState("Table");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
+
   const router = useRouter();
   const allMaestrosRef = useRef(null);
 
@@ -100,3 +104,4 @@ export default function Maestros() {
 }
 
 Maestros.layout = Admin;
+export default Maestros;
