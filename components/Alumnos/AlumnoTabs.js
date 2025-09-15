@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import ExpedienteTable from "./ExpedienteTable";
 import Modal from "./modals/AddUserModal";
 import {
@@ -67,6 +67,14 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
   useEffect(() => {
     getAlumno();
   }, [selectedUser]);
+
+  // ---- NORMALIZACIÓN DE DATOS PARA LA TARJETA ----
+  const alumnoInfo = useMemo(() => {
+    // 'informacion' puede venir como objeto o como arreglo
+    const info = Array.isArray(informacion) ? informacion[0] : informacion;
+    if (alumnoData && (alumnoData.nombre || alumnoData.id_alumno)) return alumnoData;
+    return info || {};
+  }, [alumnoData, informacion]);
 
   const handleDelete = () => {
     setShowModal(true);
@@ -184,11 +192,11 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
   const handleVisita = async () => {
     const response = await agregarAlumnoVisita(
-      secondOption.data.id_alumno,
-      secondOption.data.id_programa
+      secondOption?.data?.id_alumno,
+      secondOption?.data?.id_programa
     );
-    if (response.message != null) alert(response.message);
-    else alert(response.error);
+    if (response?.message != null) alert(response.message);
+    else if (response?.error) alert(response.error);
     getAlumno();
     setSecondOption(null);
   };
@@ -372,16 +380,16 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
 
                 <div className={openTab === 4 ? "block" : "hidden"} id="link4">
                   <AlumnoCard
-                    name={alumnoData?.nombre}
-                    id={alumnoData?.id_alumno}
-                    bDate={alumnoData?.fecha_nac}
-                    studentPhone={alumnoData?.celular}
-                    phone1={alumnoData?.telefono}
-                    phone2={alumnoData?.telefono_2}
-                    parent1={alumnoData?.tutor}
-                    parent2={alumnoData?.tutor_2}
-                    status={alumnoData?.status}
-                    medical={alumnoData?.hist_medico}
+                    name={alumnoInfo?.nombre}
+                    id={alumnoInfo?.id_alumno}
+                    bDate={alumnoInfo?.fecha_nac}
+                    studentPhone={alumnoInfo?.celular}
+                    phone1={alumnoInfo?.telefono}
+                    phone2={alumnoInfo?.telefono_2}
+                    parent1={alumnoInfo?.tutor}
+                    parent2={alumnoInfo?.tutor_2}
+                    status={alumnoInfo?.status}
+                    medical={alumnoInfo?.hist_medico}
                   />
                 </div>
 
