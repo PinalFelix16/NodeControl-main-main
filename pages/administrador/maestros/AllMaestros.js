@@ -8,7 +8,7 @@ import React, {
 
 import MaestrosTable from "components/Maestros/MaestrosTable";
 import { fetchMaestros } from "services/api/maestros";
-// 👇 usamos las clases tal como ya existen (NO tocamos nada de CRUD)
+// usamos las clases tal como ya existen (NO tocamos nada de CRUD)
 import { fetchClasesRaw } from "services/api/clases";
 
 const AllMaestros = forwardRef(function AllMaestros(

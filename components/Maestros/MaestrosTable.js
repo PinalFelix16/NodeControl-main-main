@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-// Helpers: resuelven diferencias de nombres de campos entre orígenes
+// Helpers
 const idUI = (m) => m?.id_maestro ?? m?.id ?? "";
 const nombreUI = (m) => m?.nombre_maestro ?? m?.nombre ?? "";
 const clasesCountUI = (m) =>
@@ -42,7 +42,8 @@ export default function MaestrosTable({
                 Lista de maestros
               </h3>
 
-              <span className="mt-4 items-stretch">
+              {/* Ocultar en impresión */}
+              <span className="mt-4 items-stretch print:hidden">
                 <input
                   style={{ maxWidth: "200px", marginTop: "15px" }}
                   type="text"
@@ -51,23 +52,26 @@ export default function MaestrosTable({
                     setSearchText(e.target.value);
                   }}
                   placeholder="Buscar maestro"
-                  className="border-0 px-3 py-3  placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:ring w-full pl-10"
+                  className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white rounded text-sm shadow outline-none focus:outline-none focus:ring w-full pl-10"
                 />
               </span>
 
+              {/* Imprimir → acción y oculto en impresión */}
               <button
-                className="mt-4 float-right bg-transparent border border-solid  hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200"
+                onClick={() => window.print()}
+                className="mt-4 float-right bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200 print:hidden"
                 type="button"
               >
                 <i className="fas fa-print mr-2"></i> Imprimir
               </button>
 
+              {/* Agregar → oculto en impresión */}
               <button
                 onClick={() => {
                   setView("AddUser");
                   setSelectedUser(null);
                 }}
-                className="mt-4 float-right bg-transparent border border-solid  hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200"
+                className="mt-4 float-right bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200 print:hidden"
                 type="button"
               >
                 <i className="fas fa-plus mr-2"></i> Agregar Maestro
@@ -76,8 +80,8 @@ export default function MaestrosTable({
           </div>
         </div>
 
-        <div className="block w-full overflow-x-auto">
-          {/* Projects table */}
+        {/* Mejor contraste al imprimir */}
+        <div className="block w-full overflow-x-auto print:bg-white print:text-black">
           <table className="items-center w-full bg-transparent border-collapse">
             <thead>
               <tr>
@@ -122,9 +126,10 @@ export default function MaestrosTable({
                   Clases
                 </th>
 
+                {/* Oculta la columna Acciones al imprimir */}
                 <th
                   className={
-                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left print:hidden " +
                     (color === "light"
                       ? "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
                       : "bg-blueGray-600 text-blueGray-200 border-blueGray-500")
@@ -135,56 +140,94 @@ export default function MaestrosTable({
               </tr>
             </thead>
             <tbody>
-              {maestros.map((maestro, index) => (
-                <tr key={idUI(maestro) || index}>
-                  <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center hover:bg-sky-700 cursor-pointer">
-                    {index + 1}
-                  </th>
+              {maestros.map((maestro, index) => {
+                const id = idUI(maestro);
+                const activo = Number(maestro?.status) === 1;
 
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {idUI(maestro)}
-                  </td>
+                return (
+                  <tr key={id || index}>
+                    <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center hover:bg-sky-700 cursor-pointer">
+                      {index + 1}
+                    </th>
 
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {nombreUI(maestro)}
-                  </td>
-
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                      {/* Muestra el número de clases; si no llega, calcula con el largo del arreglo */}
-                      {typeof maestro.clasesCount === "number"
-                        ? maestro.clasesCount
-                        : Array.isArray(maestro.clases)
-                        ? maestro.clases.length
-                        : 0}
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {id}
                     </td>
 
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {nombreUI(maestro)}
+                    </td>
 
-                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    <button
-                      onClick={() => {
-                        setView("EditUser");
-                        setSelectedUser(idUI(maestro));
-                      }}
-                      title="Editar maestro"
-                      className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150  hover:text-lightBlue-500 hover:border-lightBlue-500"
-                      type="button"
-                    >
-                      <i className="fas fa-user-edit text-2xl "></i>
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleDelete("Baja");
-                        setSelectedUser(idUI(maestro));
-                      }}
-                      title="Dar de baja a maestro"
-                      className="text-red-500 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150  hover:text-lightBlue-500 hover:border-lightBlue-500"
-                      type="button"
-                    >
-                      <i className="fas fa-arrow-alt-circle-down text-2xl "></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                      {clasesCountUI(maestro)}
+                    </td>
+
+                    {/* Oculta las celdas de acciones al imprimir */}
+                    <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 print:hidden">
+                      {/* Editar */}
+                      <button
+                        onClick={() => {
+                          setView("EditUser");
+                          setSelectedUser(id);
+                        }}
+                        title="Editar maestro"
+                        className="text-red-300 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150  hover:text-lightBlue-500 hover:border-lightBlue-500"
+                        type="button"
+                      >
+                        <i className="fas fa-user-edit text-2xl "></i>
+                      </button>
+
+                      {/* Alta (verde) */}
+                      <button
+                        onClick={() => {
+                          setSelectedUser(id);
+                          handleDelete("Alta");
+                        }}
+                        title="Dar de alta a maestro"
+                        disabled={activo}
+                        className={
+                          "bg-transparent border border-solid border-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 " +
+                          (activo
+                            ? "opacity-40 cursor-not-allowed"
+                            : "text-emerald-500 hover:bg-blueGray-100 hover:text-white")
+                        }
+                        type="button"
+                      >
+                        <i className="fas fa-arrow-alt-circle-up text-2xl "></i>
+                      </button>
+
+                      {/* Baja (rojo) -> color en el ícono */}
+                      <button
+                        onClick={() => {
+                          handleDelete("Baja");
+                          setSelectedUser(id);
+                        }}
+                        disabled={!activo}
+                        className={
+                          "bg-transparent border border-solid border-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-4 mb-1 ease-linear transition-all duration-150 " +
+                          (!activo ? "opacity-40 cursor-not-allowed" : "hover:bg-blueGray-100")
+                        }
+                        type="button"
+                      >
+                        <i className="fas fa-arrow-alt-circle-down text-2xl text-red-500"></i>
+                      </button>
+
+                      {/* Eliminar */}
+                      <button
+                        onClick={() => {
+                          setSelectedUser(id);
+                          handleDelete("Eliminar");
+                        }}
+                        title="Eliminar maestro"
+                        className="text-red-600 bg-transparent border border-solid border-blueGray-100 hover:bg-blueGray-100 hover:text-white active:bg-blueGray-100 font-bold uppercase text-sm px-2 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                      >
+                        <i className="fas fa-trash-alt text-2xl"></i>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
