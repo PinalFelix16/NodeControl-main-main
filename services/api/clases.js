@@ -132,3 +132,20 @@ export function deleteClase(id) {
     return true;
   })();
 }
+// ===== CRUD ALUMNO (para Editar) =====
+export async function getAlumno(id) {
+  if (id == null) throw new Error("id_alumno requerido");
+  const data = await getJSON(`${API_BASE}/alumnos/${id}`);
+  // si el backend devuelve { data: {...} }, lo desanidamos
+  return data?.data ?? data ?? {};
+}
+
+export async function updateAlumno(id, payload) {
+  if (id == null) throw new Error("id_alumno requerido");
+  return getJSON(`${API_BASE}/alumnos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+

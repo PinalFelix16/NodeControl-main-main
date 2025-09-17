@@ -16,10 +16,10 @@ import AllClases from "pages/administrador/AllClases";
 import {
   agregarAlumnoPrograma,
   agregarAlumnoVisita,
-  updateClase,
+  updateClase,fetchClasesRaw
 } from "services/api/clases";
 
-export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = false }) {
+export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = false, setView })  {
   // Abre "Información" si hideClasses=true
   const [openTab, setOpenTab] = useState(hideClasses ? 4 : 1);
   useEffect(() => {
@@ -175,34 +175,42 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     typeS === 0 ? handleInscripcion(selectedUser) : handleRecargo(selectedUser);
   };
 
-  const addClaseAlumno = async (id) => {
-    const prog = (programas || []).find((p) => String(p.id_programa) === String(id));
-    const claseIds = Array.isArray(prog?.clases) ? prog.clases.map((c) => c.id_clase || c.id) : [];
+const addClaseAlumno = async (id_programa) => {
+  try {
+    // Traemos TODAS las clases y filtramos por programa
+    const todas = await fetchClasesRaw().catch(() => []);
+    const clasesPrograma = (Array.isArray(todas) ? todas : [])
+      .filter(c => String(c.id_programa) === String(id_programa));
 
-    if (!claseIds.length) {
+    if (!clasesPrograma.length) {
       alert("Ese programa no tiene clases definidas para asignar.");
       return;
     }
 
+    const claseIds = clasesPrograma.map(c => c.id_clase ?? c.id);
+
     const data = {
       alumno_id: selectedUser,
-      id_alumno: selectedUser, // por compatibilidad
-      id_programa: id,
+      id_alumno: selectedUser,   // por compatibilidad con otros flujos
+      id_programa,
       claseIds,
     };
 
     setModalData(data);
     setSecondOption({
       text: "Registrar Visita",
-      data: data,
+      data,
       function: handleVisita2,
     });
-    setShowModal(true);
-    setTitle(
-      "¿Deseas agregar el programa seleccionado? Se agregara el adeudo correspondiente al periodo actual"
-    );
+    setTitle("¿Deseas agregar el programa seleccionado? Se agregará el adeudo correspondiente al periodo actual");
     setTypeS(1);
-  };
+    setShowModal(true);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudieron obtener las clases de ese programa.");
+  }
+};
+
 
   const handleVisita2 = () => handleVisita();
 
@@ -407,6 +415,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
                     parent2={alumnoInfo?.tutor_2}
                     status={alumnoInfo?.status}
                     medical={alumnoInfo?.hist_medico}
+                    onEdit={() => setView && setView("EditUser")}   
                   />
                 </div>
 
