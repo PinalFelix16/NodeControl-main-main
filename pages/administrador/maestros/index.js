@@ -3,10 +3,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Admin from "layouts/Admin.js";
 import Modal from "components/Alumnos/modals/AddUserModal";
-import AllMaestros from "./maestros/AllMaestros";
-import AddMaestros from "./maestros/AddMaestros";
-import EditMaestro from "./maestros/EditMaestro";
-import { updateMaestro } from "services/api/maestros";
+import AllMaestros from "./AllMaestros";
+import AddMaestros from "./AddMaestros";
+import EditMaestro from "./EditMaestro";
+import { updateMaestro, deleteMaestro } from "services/api/maestros";
 
 export default function Maestros() {
   const [view, setView] = useState("Table"); // Table, AddUser, EditUser
@@ -24,7 +24,7 @@ export default function Maestros() {
 
   const handleDelete = (action) => {
     if (!selectedUser) return alert("Selecciona un maestro primero.");
-    setTitle(action);
+    setTitle(action); // 'Baja' | 'Alta' | 'Eliminar'
     setShowModal(true);
   };
 
@@ -33,13 +33,22 @@ export default function Maestros() {
     setTitle("");
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setShowModal(false);
-    if (title === "Baja") handleBaja(selectedUser);
-    else if (title === "Alta") handleAlta(selectedUser);
-    setTitle("");
+    try {
+      if (title === "Baja") {
+        await handleBaja(selectedUser);
+      } else if (title === "Alta") {
+        await handleAlta(selectedUser);
+      } else if (title === "Eliminar") {
+        await handleEliminar(selectedUser);
+      }
+    } finally {
+      setTitle("");
+    }
   };
 
+  // --- BAJA ---
   const handleBaja = async (id) => {
     try {
       const res = await updateMaestro({ status: 0 }, id);
@@ -52,6 +61,7 @@ export default function Maestros() {
     }
   };
 
+  // --- ALTA ---
   const handleAlta = async (id) => {
     try {
       const res = await updateMaestro({ status: 1 }, id);
@@ -64,6 +74,18 @@ export default function Maestros() {
     }
   };
 
+  // --- ELIMINAR ---
+  const handleEliminar = async (id) => {
+    try {
+      await deleteMaestro(id);
+      alert("Maestro eliminado.");
+      allMaestrosRef.current?.reloadData?.();
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar maestro.");
+    }
+  };
+
   return (
     <>
       <Modal
@@ -71,7 +93,11 @@ export default function Maestros() {
         onClose={handleClose}
         onConfirm={handleConfirm}
         title={`Confirmar ${title}`}
-        message={`¿Estás seguro de que deseas dar de ${title} a este maestro?`}
+        message={
+          title === "Eliminar"
+            ? "¿Estás seguro de eliminar a este maestro?"
+            : `¿Estás seguro de que deseas dar de ${title} a este maestro?`
+        }
       />
 
       {view === "Table" && (
@@ -94,7 +120,9 @@ export default function Maestros() {
       )}
 
       {view === "AddUser" && <AddMaestros setView={setView} />}
-      {view === "EditUser" && <EditMaestro setView={setView} selectedUser={selectedUser} />}
+      {view === "EditUser" && (
+        <EditMaestro setView={setView} selectedUser={selectedUser} />
+      )}
     </>
   );
 }
