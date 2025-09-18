@@ -13,8 +13,8 @@ import HistorialTable from "./HistorialTable";
 import AlumnoCard from "./cards/AlumnoCard";
 import ClasesCard from "./cards/ClasesCard";
 import AllClases from "pages/administrador/AllClases";
-import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
-import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+//import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+//import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
 
 import {
   agregarAlumnoPrograma,
