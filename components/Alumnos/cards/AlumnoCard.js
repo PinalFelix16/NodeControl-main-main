@@ -1,108 +1,74 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import Admin from "layouts/Admin.js";
-import { bajaAlumno, altaAlumno } from "services/api/alumnos";
-import Modal from "components/Alumnos/modals/AddUserModal";
-import AllClasesPrueba from "pages/administrador/AllClasesPrueba";
-import AddProgramas from "pages/administrador/programas/AddProgramas";
-import EditProgramas from "pages/administrador/programas/EditProgramas";
-import Link from "next/link";
+import React from "react";
 
-export default function Programas2() {
-  const [view, setView] = useState('Table'); 
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [title, setTitle] = useState("");
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    // Revisa si hay token en localStorage (usuario autenticado)
-    if (!localStorage.getItem("token")) {
-      router.replace("/auth/login"); // Cambia a tu ruta real si es necesario
-    }
-
-    // Verifica permisos de superadministrador
-    const userRaw = localStorage.getItem("usuario");
-    if (userRaw) {
-      try {
-        const user = JSON.parse(userRaw);
-        if (user && user.permisos === "SUPERADMINISTRADOR") {
-          setIsSuperadmin(true);
-        } else {
-          setIsSuperadmin(false);
-        }
-      } catch (e) {
-        setIsSuperadmin(false);
-      }
-    }
-  }, []);
-
-  const handleDelete = (action) => {
-    setTitle(action);
-    setShowModal(true);
-  };
-
-  const handleClose = () => {
-    setShowModal(false);
-    setTitle("");
-  };
-
-  const handleConfirm = () => {
-    setShowModal(false);
-    // Lógica adicional de confirmación, si es necesario
-  };
-
-  // Definir la función onClickEvent
-  const onClickEvent = (id_programa) => {
-    console.log("Programa seleccionado:", id_programa);
-    // Lógica adicional para manejar el evento onClick
-  };
-
+export default function AlumnoCard({
+  name,
+  id,
+  bDate,
+  studentPhone,
+  phone1,
+  phone2,
+  parent1,
+  parent2,
+  status,
+  medical,
+}) {
   return (
-    <>
-      {/* Barra superior personalizada */}
-      <div className="flex justify-end items-center p-4 bg-white">
-        {/* Aquí va el botón de agregar usuario solo para superadmin */}
-        {isSuperadmin && (
-          <Link href="/administrador/usuarios">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-bold transition">
-              Agregar Usuario
-            </button>
-          </Link>
-        )}
+    <div className="bg-white rounded-lg shadow p-6">
+      <h4 className="text-xl font-bold mb-4">Información del alumno</h4>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <p className="text-sm text-blueGray-400">Nombre</p>
+          <p className="font-semibold">{name || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">ID</p>
+          <p className="font-semibold">{id ?? "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Fecha de Nacimiento</p>
+          <p className="font-semibold">{bDate || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Estatus</p>
+          <p className="font-semibold">{status ?? "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Celular del alumno</p>
+          <p className="font-semibold">{studentPhone || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Teléfono 1</p>
+          <p className="font-semibold">{phone1 || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Teléfono 2</p>
+          <p className="font-semibold">{phone2 || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Tutor 1</p>
+          <p className="font-semibold">{parent1 || "-"}</p>
+        </div>
+
+        <div>
+          <p className="text-sm text-blueGray-400">Tutor 2</p>
+          <p className="font-semibold">{parent2 || "-"}</p>
+        </div>
       </div>
 
-      <Modal
-        show={showModal}
-        onClose={handleClose}
-        onConfirm={handleConfirm}
-        title={`Confirmar ${title}`}
-        message={`¿Estás seguro de que deseas dar de ${title} a este alumno?`}
-      />
-      {view === 'Table' && (
-        <div>
-          <button onClick={() => setView('AddUser')} className="bg-blue-500 text-white px-4 py-2 rounded mb-4">
-            Agregar Clase
-          </button>
-          <AllClasesPrueba 
-            onClickEvent={onClickEvent} 
-            title={title} 
-            setView={setView} 
-            setSelectedUser={setSelectedUser} 
-            handleDelete={handleDelete} 
-          />
-        </div>
-      )}
-      {view === 'AddUser' && (
-        <AddProgramas setView={setView} />
-      )}
-      {view === 'EditUser' && (
-        <EditProgramas setView={setView} selectedUser={selectedUser} />
-      )}
-    </>
+      <div className="mt-4">
+        <p className="text-sm text-blueGray-400">Historial médico / Observaciones</p>
+        <p className="font-semibold whitespace-pre-line">
+          {medical || "—"}
+        </p>
+      </div>
+    </div>
   );
 }
-
-// Asigna el layout de administrador al componente Programas2
-Programas2.layout = Admin;

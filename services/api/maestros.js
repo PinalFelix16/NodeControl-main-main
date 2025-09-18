@@ -74,3 +74,12 @@ export async function updateMaestro(payload, id) {
     body: JSON.stringify(payload || {}),
   });
 }
+
+// --- ELIMINAR maestro ---
+export async function deleteMaestro(id) {
+  if (id == null) throw new Error("id maestro requerido");
+  return requestJSON(`${API_BASE}/maestros/${id}`, {
+    method: "DELETE",
+  });
+}
+

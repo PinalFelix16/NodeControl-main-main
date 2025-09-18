@@ -8,7 +8,7 @@ import TBody from "components/table/Tbody";
 import Thead from "components/table/Thead";
 import TRow from "components/table/Trow";
 import Admin from "layouts/Admin";
-import { useState } from "react";
+import { useEffect, useState } from "react"; // <-- añadido useEffect
 import ViewHandler from "components/nominas/ViewHandler"; // <-- PROTOCOLO ROJO: IMPORT CORRECTO Y ÚNICO
 import Toolbar from "components/nominas/toolbar";
 import EyeIcon from "components/nominas/eyeIcon";
@@ -16,6 +16,24 @@ import BookIcon from "components/nominas/bookIcon";
 import Editicon from "components/nominas/editIcon";
 import DeleteIcon from "components/nominas/deleteIcon";
 import { NominasProvider, useNominas } from "components/nominas/nominasContext";
+
+/** Mismo aviso que usas en "Consultas" para usuarios sin permiso */
+function NoAccessBox() {
+  return (
+    <div className="w-full flex justify-center py-16">
+      <div className="bg-white max-w-xl w-full rounded shadow p-6 text-center">
+        <p className="text-red-600 font-semibold mb-2">
+          No tienes permisos para acceder a esta sección.
+        </p>
+        <p className="text-sm text-red-500">
+          Si cree que esto es un error, contacte al administrador.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
 
 function Nomina() {
   const { nominas, refresh } = useNominas();
@@ -137,6 +155,25 @@ function Nomina() {
 }
 
 export default function NominaWrapper() {
+  // ---- COMPuERTA DE PERMISOS (igual que Consultas) ----
+  const [isClient, setIsClient] = useState(false);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    try {
+      const raw = localStorage.getItem("usuario");
+      const u = raw ? JSON.parse(raw) : null;
+      setIsSuperadmin(u?.permisos === "SUPERADMINISTRADOR");
+    } catch {
+      setIsSuperadmin(false);
+    }
+  }, []);
+
+  if (!isClient) return null;        // evita parpadeos de hidratación
+  if (!isSuperadmin) return <NoAccessBox />; // sin permiso, mismo mensaje que Consultas
+
+  // Con permiso, render normal (sin tocar tu lógica existente)
   return (
     <NominasProvider>
       <Nomina />
