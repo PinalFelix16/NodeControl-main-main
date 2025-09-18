@@ -21,6 +21,30 @@ const AllMaestros = forwardRef(function AllMaestros(
   const [baseData, setBaseData] = useState([]);
 
   async function getMaestros() {
+
+   
+  /*  const data = await fetchMaestros(status);
+    setMaestros(data);
+    setFetchedMaestros(data);
+  }
+
+useEffect(() => { getMaestros(); }, [status]); 
+
+useEffect(() => {
+  const filtered = fetchedMaestros.filter(m => {
+    const nombre = m?.nombre_maestro ? m.nombre_maestro.toLowerCase() : "";
+    const id = m?.id_maestro ? String(m.id_maestro).toLowerCase() : "";
+
+    return (
+      nombre.includes(searchText.toLowerCase()) ||
+      id.includes(searchText.toLowerCase())
+    );
+  });
+
+  setMaestros(filtered);
+}, [fetchedMaestros, searchText]);
+*/
+
     // evita recargar mientras hay modal abierto
     if (title) return;
 
@@ -85,6 +109,7 @@ const AllMaestros = forwardRef(function AllMaestros(
     applyFilter(baseData, searchText);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchText, baseData]);
+
 
   // Exponer método para que el padre pueda refrescar
   useImperativeHandle(ref, () => ({

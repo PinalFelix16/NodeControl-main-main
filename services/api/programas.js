@@ -1,4 +1,3 @@
-// services/api/programas.js
 import { API_BASE } from "./clases";
 
 const TOKEN_KEY = "token";
@@ -20,6 +19,7 @@ async function request(path, { method = "GET", body, token, headers } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
+  // Intentar leer JSON; si no, texto
   let data = null;
   try { data = await res.json(); } catch { try { data = await res.text(); } catch {} }
   if (!res.ok) {

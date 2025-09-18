@@ -13,13 +13,17 @@ import HistorialTable from "./HistorialTable";
 import AlumnoCard from "./cards/AlumnoCard";
 import ClasesCard from "./cards/ClasesCard";
 import AllClases from "pages/administrador/AllClases";
+//import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+//import { agregarAlumnoPrograma, agregarAlumnoVisita, updateClase } from "services/api/clases"; // ← MOD: añadí updateClase
+
 import {
   agregarAlumnoPrograma,
   agregarAlumnoVisita,
   updateClase,fetchClasesRaw
 } from "services/api/clases";
 
-export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = false, setView })  {
+
+export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = false }) {
   // Abre "Información" si hideClasses=true
   const [openTab, setOpenTab] = useState(hideClasses ? 4 : 1);
   useEffect(() => {
@@ -175,12 +179,32 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     typeS === 0 ? handleInscripcion(selectedUser) : handleRecargo(selectedUser);
   };
 
-const addClaseAlumno = async (id_programa) => {
-  try {
-    // Traemos TODAS las clases y filtramos por programa
-    const todas = await fetchClasesRaw().catch(() => []);
-    const clasesPrograma = (Array.isArray(todas) ? todas : [])
-      .filter(c => String(c.id_programa) === String(id_programa));
+  const addClaseAlumno = async (id) => {
+
+
+    /*const data = {
+      id_alumno: selectedUser,
+      id_programa: id
+
+    };
+   
+    await setModalData(data);
+    setSecondOption({
+      text: "Registrar Visita", 
+      data : data,
+      function: handleVisita2
+    });
+    setShowModal(true);
+    setTitle('¿Deseas agregar el programa seleccionado? Se agregara el adeudo correspondiente al periodo actual');
+    setTypeS(1);   
+
+  }
+  const handleVisita2 = () =>{
+    handleVisita();
+  }*/
+
+    const prog = (programas || []).find((p) => String(p.id_programa) === String(id));
+    const claseIds = Array.isArray(prog?.clases) ? prog.clases.map((c) => c.id_clase || c.id) : [];
 
     if (!clasesPrograma.length) {
       alert("Ese programa no tiene clases definidas para asignar.");

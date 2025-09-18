@@ -47,8 +47,8 @@ export async function fetchProgramasAlumno(id_alumno) {
 }
 
 // ===== CLASES / PROGRAMAS =====
-export const fetchClasesRaw    = () =>
-  getJSON(`${API_BASE}/clases?status=1&_t=${Date.now()}`);
+export const fetchClasesRaw = () =>
+getJSON(`${API_BASE}/clases?status=1&_t=${Date.now()}`);
 export const fetchProgramasRaw = () => getJSON(`${API_BASE}/programas`);
 export const fetchMaestrosRaw  = () => (_fetchMaestros ? _fetchMaestros().catch(() => []) : Promise.resolve([]));
 
