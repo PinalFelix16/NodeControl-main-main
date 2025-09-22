@@ -1,3 +1,4 @@
+// pages/administrador/AllClases.jsx
 import React, { useEffect, useState } from "react";
 import Admin from "layouts/Admin.js";
 import { fetchClases } from "services/api/clases";
@@ -10,7 +11,7 @@ export default function AllClases({
   handleDelete,
   title,
   isStudent = false,
-  programasAlumno = []
+  programasAlumno = [],
 }) {
   const [programas, setProgramas] = useState([]);
 
@@ -27,11 +28,17 @@ export default function AllClases({
   useEffect(() => {
     async function getProgramas() {
       const data = await fetchClases();
+
+      // ⬇️⬇️ ÚNICO AJUSTE: excluir SOLO los que el alumno ya cursa
+      const idsYaInscritos = new Set(
+        (programasAlumno || [])
+          .filter((p) => p && p.inscrito === true)
+          .map((p) => String(p.id_programa))
+      );
+
       const filteredProgramas = normalizePrograms(
-        data.filter((programa) =>
-          !programasAlumno.some(
-            (al) => al.id_programa === programa.id_programa
-          )
+        (Array.isArray(data) ? data : []).filter(
+          (programa) => !idsYaInscritos.has(String(programa.id_programa))
         )
       );
       setProgramas(filteredProgramas);
@@ -49,7 +56,10 @@ export default function AllClases({
             </h3>
             {!isStudent && (
               <button
-                onClick={() => { setView('AddUser'); setSelectedUser(null); }}
+                onClick={() => {
+                  setView("AddUser");
+                  setSelectedUser(null);
+                }}
                 className="float-right mb-4 bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 text-white text-sm font-bold px-4 py-2 rounded shadow transition-colors duration-150 ease-linear outline-none focus:outline-none"
                 type="button"
               >
@@ -58,6 +68,7 @@ export default function AllClases({
             )}
           </div>
         </div>
+
         <div className="w-full mb-12 px-4">
           <div className="px-4 md:px-10 mx-auto w-full">
             <div className="flex flex-wrap">
@@ -67,11 +78,15 @@ export default function AllClases({
                   : [];
                 if (safeClases.length === 0) return null;
 
-                const key = String(element.id_programa ?? `p-${element.nombre_programa}`);
+                const key = String(
+                  element.id_programa ?? `p-${element.nombre_programa}`
+                );
 
                 return (
                   <div
-                    onClick={() => { onClickEvent && onClickEvent(element.id_programa); }}
+                    onClick={() => {
+                      onClickEvent && onClickEvent(element.id_programa);
+                    }}
                     className="w-full lg:w-6/12 px-4 py-2 mb-2 hover:bigger"
                     key={key}
                     style={{ cursor: "pointer" }}
@@ -82,19 +97,22 @@ export default function AllClases({
                       statPercent={element.mensualidad}
                       statSchedule={safeClases}
                       onEdit={(id_clase) => {
-                        if (!id_clase) return alert("Esta clase no tiene id_clase.");
+                        if (!id_clase)
+                          return alert("Esta clase no tiene id_clase.");
                         setSelectedUser(id_clase);
-                        setView('EditUser');
+                        setView("EditUser");
                       }}
                       onDelete={(id_clase) => {
-                        if (!id_clase) return alert("Esta clase no tiene id_clase.");
-                        // si te pasan handleDelete (llama API), además limpia UI local:
+                        if (!id_clase)
+                          return alert("Esta clase no tiene id_clase.");
                         if (handleDelete) handleDelete(id_clase);
                         setProgramas((prev) =>
                           prev
                             .map((p) => ({
                               ...p,
-                              clases: (p.clases || []).filter((c) => c.id_clase !== id_clase),
+                              clases: (p.clases || []).filter(
+                                (c) => c.id_clase !== id_clase
+                              ),
                             }))
                             .filter((p) => (p.clases || []).length > 0)
                         );
@@ -103,7 +121,7 @@ export default function AllClases({
                   </div>
                 );
               })}
-              {programas.length === 0 && (<p>No hay clases disponibles</p>)}
+              {programas.length === 0 && <p>No hay clases disponibles</p>}
             </div>
           </div>
         </div>
