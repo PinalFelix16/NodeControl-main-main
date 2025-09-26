@@ -128,14 +128,14 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
       }))
       .filter((p) => p.clases.length > 0);
 
-    // set de pagos ya hechos (programa|periodo|concepto) — si el backend no manda id_programa, igual funciona por periodo+concepto
+    // set de pagos ya hechos (programa|periodo|concepto)
     const pagadoKey = (pid, periodo, concepto) =>
       `${String(pid)}|${String(periodo).toUpperCase()}|${String(concepto).toUpperCase()}`;
 
     const setPagosHechos = new Set(
       historialNorm.map((h) =>
         pagadoKey(
-          h.id_programa ?? h.programa_id ?? h.programa ?? "", // puede venir null, no pasa nada
+          h.id_programa ?? h.programa_id ?? h.programa ?? "",
           h.periodo ?? h.referencia ?? "",
           h.concepto ?? ""
         )
@@ -161,7 +161,7 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
       const estaPagadoActual = setPagosHechos.has(pagadoKey(pid, periodoHoy, "MENSUALIDAD"));
 
       if (!estaPagadoActual && !yaTieneMensualidadReal(pid, periodoHoy)) {
-        // mostrar mensualidad del mes actual SOLO si no está pagada
+        // mensualidad del mes actual SOLO si no está pagada
         pendientesSinteticos.push({
           id_programa: pid ?? null,
           nombre_programa: p.nombre || p.nombre_programa || "Programa",
@@ -474,6 +474,14 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     setOpenTab(1);
   };
 
+  // ---- (Opcional) si quieres calcular un total propio del historial:
+  // const totalHistorial = Array.isArray(historial)
+  //   ? historial.reduce((acc, h) => {
+  //       const n = Number(String(h.importe ?? h.monto ?? h.cantidad ?? 0).replace(/[^0-9.-]/g, ""));
+  //       return acc + (Number.isFinite(n) ? n : 0);
+  //     }, 0)
+  //   : 0;
+
   return (
     <>
       <div className="flex flex-wrap bg-white w-full">
@@ -590,7 +598,11 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
                 </div>
 
                 <div className={openTab === 2 ? "block" : "hidden"} id="link2">
-                  <HistorialTable pagos={historial} total={total} handlePayment={handlePayment} />
+                  {/* No pasamos 'total' para que HistorialTable calcule su propio total desde 'pagos' */}
+                  <HistorialTable pagos={historial} handlePayment={handlePayment} />
+                  {/* Si prefieres enviar un total del historial, usa la línea de abajo:
+                      <HistorialTable pagos={historial} total={totalHistorial} handlePayment={handlePayment} />
+                  */}
                 </div>
 
                 {/* CLASES: SOLO INSCRITAS POR EL ALUMNO */}

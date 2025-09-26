@@ -1,14 +1,13 @@
 // services/api/expediente.js
 // -------------------------------------------------------------
-// OBJETIVO: mantener tu UI intacta. Solo corregimos los POST
-// y robustecemos el cruce Programas/Clases sin romper nada.
+// Mantiene tu UI intacta y agrega robustez a llamadas.
 // -------------------------------------------------------------
 
-// 1) Base correcta: sin /public y SIN duplicar /api
+// 1) Base correcta de API (sin /public y sin duplicar /api)
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
   .replace(/\/+$/, ''); // quita barras finales
 
-// 2) Token opcional (si usas Bearer)
+// 2) Token opcional (Bearer)
 const TOKEN_KEY = 'token';
 const getToken = () =>
   (typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null);
@@ -17,7 +16,7 @@ const authHeaders = () => {
   return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-// 3) Helper con logs útiles
+// 3) Helper fetch JSON con manejo de errores
 async function getJSON(path, opts = {}) {
   const url = `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
   const res = await fetch(url, {
@@ -43,27 +42,90 @@ async function getJSON(path, opts = {}) {
   return data;
 }
 
+// Utilidad para normalizar ID de programa (puede venir con distintas claves)
+function _pid(x) {
+  return String(
+    x?.id_programa ?? x?.programa_id ?? x?.id ?? x?.programa ?? ''
+  ).trim();
+}
+
 // ================== GETs ==================
 
+// Pendientes / estado del alumno
 export const fetchAlumnosStatus = (id_alumno) =>
   getJSON(`/alumnos/${id_alumno}/expediente`);
 
-export const fetchHistorialAlumno = (id_alumno) =>
-  getJSON(`/alumnos/${id_alumno}/pagos`);
-
+// INFORMACIÓN del alumno
 export const fetchInformacionAlumno = (id_alumno) =>
   getJSON(`/alumnos/${id_alumno}`);
 
-// ------------------ Programas y clases del alumno ------------------
-// Devuelve SOLO programas que tengan al menos una clase.
-// Usa normalización de IDs para evitar duplicados/ruidos.
+// HISTORIAL del alumno (única definición, con fallback y enriquecimiento de programa)
+export async function fetchHistorialAlumno(alumnoId) {
+  const headers = { ...authHeaders() };
+
+  const normalizeList = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw?.data)) return raw.data;
+    if (Array.isArray(raw)) return raw;
+    return [];
+  };
+
+  // 1) endpoint preferido, pidiendo TODO (sin paginar)
+  let lista = [];
+  try {
+    const url = `${API_BASE}/alumnos/${alumnoId}/historial?all=1&nopage=1&per_page=1000`;
+    const r = await fetch(url, { headers, cache: 'no-store' });
+    if (r.ok) lista = normalizeList(await r.json());
+  } catch {}
+
+  // 2) fallback universal: /pagos?alumno_id=... (también sin paginar)
+  if (lista.length === 0) {
+    try {
+      const url2 = `${API_BASE}/pagos?alumno_id=${alumnoId}&all=1&nopage=1&per_page=1000`;
+      const r2 = await fetch(url2, { headers, cache: 'no-store' });
+      if (r2.ok) lista = normalizeList(await r2.json());
+    } catch {}
+  }
+
+  // 3) Traer programas y construir mapa id -> nombre
+  let programas = [];
+  try {
+    const rp = await fetch(`${API_BASE}/programas`, { headers, cache: 'no-store' });
+    if (rp.ok) {
+      const jp = await rp.json();
+      programas = Array.isArray(jp?.data) ? jp.data : (Array.isArray(jp) ? jp : []);
+    }
+  } catch {}
+
+  const nameById = new Map();
+  for (const p of programas) {
+    const id = _pid(p);
+    const nombre = p?.nombre || p?.nombre_programa || '';
+    if (id && nombre) nameById.set(id, nombre);
+  }
+
+  // 4) Enriquecer cada pago con "programa" si falta
+  const enriquecida = lista.map((p) => {
+    const ya = p.programa ?? p.programa_nombre ?? p.nombre_programa ?? '';
+    if (ya && String(ya).trim()) return p; // ya trae texto
+    const id = _pid(p); // lee id_programa/programa_id/etc. del pago
+    const nombre = nameById.get(id) || '';
+    return nombre
+      ? { ...p, programa: nombre, nombre_programa: nombre, programa_nombre: nombre }
+      : p;
+  });
+
+  // Devolver en el formato que consume la UI (tu AlumnoTabs acepta .data o array)
+  return { data: enriquecida };
+}
+
+// Programas y clases del alumno (solo programas con al menos una clase)
 export async function fetchProgramasAlumno(id_alumno) {
   const [programasAll, clasesAll] = await Promise.all([
     getJSON('/programas'),
     getJSON('/clases'),
   ]);
 
-  // Normaliza el id de programa
   const toPid = (obj) =>
     String(
       obj?.id_programa ??
@@ -72,7 +134,6 @@ export async function fetchProgramasAlumno(id_alumno) {
       obj?.programa ?? ''
     ).trim();
 
-  // Indexa clases por programa
   const clasesPorPrograma = new Map();
   (Array.isArray(clasesAll) ? clasesAll : []).forEach((c) => {
     const pid = toPid(c);
@@ -89,7 +150,6 @@ export async function fetchProgramasAlumno(id_alumno) {
     });
   });
 
-  // SOLO programas que tienen al menos una clase
   const list = (Array.isArray(programasAll) ? programasAll : [])
     .map((p) => {
       const pid = toPid(p);
@@ -103,17 +163,13 @@ export async function fetchProgramasAlumno(id_alumno) {
         inscrito,
       };
     })
-    .filter((p) => Array.isArray(p.clases) && p.clases.length > 0) // ← clave para volver al comportamiento anterior
+    .filter((p) => Array.isArray(p.clases) && p.clases.length > 0)
     .sort((a, b) => Number(b.inscrito) - Number(a.inscrito));
 
   return list;
 }
 
-
-
 // ================== POSTs ==================
-// Enviamos `concepto` y campos comunes con valores por defecto.
-// La UI puede seguir llamando postInscripcion(id) y postRecargo(id).
 
 function buildCommonPayload(id_alumno, extra = {}) {
   const now = new Date();
@@ -123,7 +179,6 @@ function buildCommonPayload(id_alumno, extra = {}) {
   ];
   const periodo = extra.periodo || `${meses[now.getMonth()]}/${now.getFullYear()}`;
 
-  // YYYY-MM-DD para Laravel
   const fechaISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 10);
@@ -131,21 +186,14 @@ function buildCommonPayload(id_alumno, extra = {}) {
   const importe = Number(extra.importe ?? 0);
 
   return {
-    // IDs (duplicados por compatibilidad)
     alumno_id: id_alumno,
     id_alumno: id_alumno,
-
-    // Campos requeridos por validación
-    periodo,               // p.ej. "SEPTIEMBRE/2025"
-    importe,               // si el backend lo usa
-    monto: importe,        // alias común en backend
+    periodo,
+    importe,
+    monto: importe,
     fecha_pago: extra.fecha_pago || fechaISO,
-    fecha: extra.fecha || fechaISO, // por si valida con 'fecha'
-
-    // Opcionales
+    fecha: extra.fecha || fechaISO,
     id_programa: extra.id_programa ?? null,
-
-    // Permite sobreescritura si envías manualmente algún campo
     ...extra,
   };
 }
