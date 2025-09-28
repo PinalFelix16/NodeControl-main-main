@@ -8,12 +8,46 @@ export default function HistorialTable({ color = "light", pagos = [] }) {
     return Number.isFinite(n) ? `$${n.toFixed(2)}` : (v ?? "");
   };
 
-  const programName = (r) =>
-    (r?.programa && String(r.programa).trim()) ||
-    (r?.nombre_programa && String(r.nombre_programa).trim()) ||
-    (r?.programa_nombre && String(r.programa_nombre).trim()) ||
-    (r?.nombre && String(r.nombre).trim()) ||
-    "—";
+  const BAD_LABEL = /^(INSCRIPCION|INSCRIPCIÓN|RECARGO|MENSUALIDAD)$/i;
+
+  // --- PROGRAMA: solo nombre de clase (Natación, etc.)
+  const programName = (r) => {
+    const pick = (s) => {
+      const v = (s ?? "").toString().trim();
+      return v && !BAD_LABEL.test(v) ? v : "";
+    };
+
+    // 1) campos explícitos de programa
+    const base =
+      pick(r?.programa) ||
+      pick(r?.nombre_programa) ||
+      pick(r?.programa_nombre);
+    if (base) return base;
+
+    // 2) respaldo: extraer de periodo/referencia después del separador
+    const bruto = String(r?.periodo ?? r?.referencia ?? "");
+    if (bruto) {
+      const partes = bruto.split(/[\|\uFF5C]/); // '|' ASCII o '｜' full-width
+      if (partes.length > 1) {
+        const candidato = pick(partes[partes.length - 1]);
+        if (candidato) return candidato;
+      }
+    }
+    return "—";
+  };
+
+  // --- PERIODO: mostrar SOLO "MES/AÑO"
+  const periodOnly = (r) => {
+    const bruto = String(r?.periodo ?? r?.referencia ?? "");
+    if (!bruto) return "";
+    // Tomamos la parte ANTES del separador '|' o '｜'
+    const soloPeriodo = bruto.split(/[\|\uFF5C]/)[0].trim();
+    // Limpieza defensiva: si por error vienen etiquetas pegadas, quítalas
+    return soloPeriodo
+      .replace(/\b(INSCRIPCION|INSCRIPCIÓN|RECARGO|MENSUALIDAD)\b/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  };
 
   const concept = (r) => String(r?.concepto ?? "").toUpperCase() || "—";
 
@@ -64,7 +98,7 @@ export default function HistorialTable({ color = "light", pagos = [] }) {
                     {programName(row)}
                   </td>
                   <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {row?.periodo ?? row?.referencia ?? ""}
+                    {periodOnly(row)}
                   </td>
                   <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                     {concept(row)}

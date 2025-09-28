@@ -3,11 +3,9 @@
 // Mantiene tu UI intacta y agrega robustez a llamadas.
 // -------------------------------------------------------------
 
-// 1) Base correcta de API (sin /public y sin duplicar /api)
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api')
-  .replace(/\/+$/, ''); // quita barras finales
+  .replace(/\/+$/, '');
 
-// 2) Token opcional (Bearer)
 const TOKEN_KEY = 'token';
 const getToken = () =>
   (typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null);
@@ -16,7 +14,6 @@ const authHeaders = () => {
   return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-// 3) Helper fetch JSON con manejo de errores
 async function getJSON(path, opts = {}) {
   const url = `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`;
   const res = await fetch(url, {
@@ -42,24 +39,29 @@ async function getJSON(path, opts = {}) {
   return data;
 }
 
-// Utilidad para normalizar ID de programa (puede venir con distintas claves)
-function _pid(x) {
+// ---------- Helpers ----------
+function _pid(x) { // ID de programa en catálogo
   return String(
     x?.id_programa ?? x?.programa_id ?? x?.id ?? x?.programa ?? ''
   ).trim();
 }
 
-// ================== GETs ==================
+// ID de PROGRAMA cuando el objeto es un PAGO (¡no usar .id/.folio!)
+function _pidPago(x) {
+  return String(x?.programa_id ?? x?.id_programa ?? '').trim();
+}
 
-// Pendientes / estado del alumno
+// Palabras que NO son nombre de programa
+const BAD_LABEL = /^(INSCRIPCION|INSCRIPCIÓN|RECARGO|MENSUALIDAD)$/i;
+
+// ================== GETs ==================
 export const fetchAlumnosStatus = (id_alumno) =>
   getJSON(`/alumnos/${id_alumno}/expediente`);
 
-// INFORMACIÓN del alumno
 export const fetchInformacionAlumno = (id_alumno) =>
   getJSON(`/alumnos/${id_alumno}`);
 
-// HISTORIAL del alumno (única definición, con fallback y enriquecimiento de programa)
+// HISTORIAL del alumno
 export async function fetchHistorialAlumno(alumnoId) {
   const headers = { ...authHeaders() };
 
@@ -70,7 +72,7 @@ export async function fetchHistorialAlumno(alumnoId) {
     return [];
   };
 
-  // 1) endpoint preferido, pidiendo TODO (sin paginar)
+  // 1) endpoint preferido
   let lista = [];
   try {
     const url = `${API_BASE}/alumnos/${alumnoId}/historial?all=1&nopage=1&per_page=1000`;
@@ -78,7 +80,7 @@ export async function fetchHistorialAlumno(alumnoId) {
     if (r.ok) lista = normalizeList(await r.json());
   } catch {}
 
-  // 2) fallback universal: /pagos?alumno_id=... (también sin paginar)
+  // 2) fallback
   if (lista.length === 0) {
     try {
       const url2 = `${API_BASE}/pagos?alumno_id=${alumnoId}&all=1&nopage=1&per_page=1000`;
@@ -87,7 +89,7 @@ export async function fetchHistorialAlumno(alumnoId) {
     } catch {}
   }
 
-  // 3) Traer programas y construir mapa id -> nombre
+  // 3) programas para enriquecer
   let programas = [];
   try {
     const rp = await fetch(`${API_BASE}/programas`, { headers, cache: 'no-store' });
@@ -104,18 +106,28 @@ export async function fetchHistorialAlumno(alumnoId) {
     if (id && nombre) nameById.set(id, nombre);
   }
 
-  // 4) Enriquecer cada pago con "programa" si falta
+  // 4) enriquecer
   const enriquecida = lista.map((p) => {
-    const ya = p.programa ?? p.programa_nombre ?? p.nombre_programa ?? '';
-    if (ya && String(ya).trim()) return p; // ya trae texto
-    const id = _pid(p); // lee id_programa/programa_id/etc. del pago
-    const nombre = nameById.get(id) || '';
+    const ya = (p.programa ?? p.programa_nombre ?? p.nombre_programa ?? '').trim();
+    if (ya && !BAD_LABEL.test(ya)) return p;
+
+    const id = _pidPago(p);
+    let nombre = (id ? nameById.get(id) : '') || '';
+
+    if (!nombre) {
+      const campo = (p.periodo ?? p.referencia ?? '').toString();
+      const partes = campo.split(/[\|\uFF5C]/); // '|' ASCII o '｜' full-width
+      if (partes.length > 1) {
+        const posible = (partes[partes.length - 1] || '').trim();
+        if (posible && !BAD_LABEL.test(posible)) nombre = posible;
+      }
+    }
+
     return nombre
       ? { ...p, programa: nombre, nombre_programa: nombre, programa_nombre: nombre }
       : p;
   });
 
-  // Devolver en el formato que consume la UI (tu AlumnoTabs acepta .data o array)
   return { data: enriquecida };
 }
 
@@ -170,7 +182,6 @@ export async function fetchProgramasAlumno(id_alumno) {
 }
 
 // ================== POSTs ==================
-
 function buildCommonPayload(id_alumno, extra = {}) {
   const now = new Date();
   const meses = [
@@ -232,4 +243,76 @@ export function postMensualidad(id_alumno, extra = {}) {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+/**
+ * Da de baja al alumno de un PROGRAMA.
+ * Ruta oficial: POST /alumnos/{alumno}/baja-programa (InscripcionesController@bajaPrograma).
+ * Fallback opcional: si falla y mandas opts.claseIds, intenta POST /clases/{id}/quitar-alumno.
+ */
+export async function bajaProgramaAlumno(id_alumno, id_programa, opts = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+
+  const headers = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...authHeaders(),
+  };
+
+  // 1) Ruta oficial (la única que intentamos por programa)
+  const url1 = `${API_BASE}/alumnos/${id_alumno}/baja-programa`;
+  try {
+    const res = await fetch(url1, {
+      method: 'POST',
+      headers,
+      cache: 'no-store',
+      signal: controller.signal,
+      body: JSON.stringify({
+        programa_id: Number(id_programa),
+        remove_deuda_actual: Boolean(opts.remove_deuda_actual),
+      }),
+    });
+
+    let data = null;
+    try { data = await res.json(); } catch {}
+
+    if (res.ok) return data ?? { ok: true };
+
+    // Si no ok, y NO tenemos fallback, lanzamos error directo
+    if (!Array.isArray(opts.claseIds) || opts.claseIds.length === 0) {
+      const msg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+  } catch (e) {
+    // seguimos al fallback si hay claseIds; si no, re-lanzamos
+    if (!Array.isArray(opts.claseIds) || opts.claseIds.length === 0) {
+      clearTimeout(timeout);
+      throw e;
+    }
+  }
+
+  // 2) Fallback por CLASE: quitar alumno de cada clase del programa
+  try {
+    await Promise.all(
+      (opts.claseIds || []).map((cid) =>
+        fetch(`${API_BASE}/clases/${cid}/quitar-alumno`, {
+          method: 'POST',
+          headers,
+          cache: 'no-store',
+          body: JSON.stringify({ alumno_id: id_alumno }),
+        }).then(async (r) => {
+          // no necesitamos respuesta estricta; si falla alguna, que lance para cortar
+          if (!r.ok) {
+            let d = null; try { d = await r.json(); } catch {}
+            const msg = (d && (d.message || d.error)) || `HTTP ${r.status}`;
+            throw new Error(msg);
+          }
+        })
+      )
+    );
+    return { ok: true, fallback: 'clases' };
+  } finally {
+    clearTimeout(timeout);
+  }
 }

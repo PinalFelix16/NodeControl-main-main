@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ExpedienteTable from "./ExpedienteTable";
 import Modal from "./modals/AddUserModal";
+import AlumnoClasesInscritas from "@/components/Alumnos/AlumnoClasesInscritas";
 import {
   postInscripcion,
   postRecargo,
@@ -474,14 +475,6 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
     setOpenTab(1);
   };
 
-  // ---- (Opcional) si quieres calcular un total propio del historial:
-  // const totalHistorial = Array.isArray(historial)
-  //   ? historial.reduce((acc, h) => {
-  //       const n = Number(String(h.importe ?? h.monto ?? h.cantidad ?? 0).replace(/[^0-9.-]/g, ""));
-  //       return acc + (Number.isFinite(n) ? n : 0);
-  //     }, 0)
-  //   : 0;
-
   return (
     <>
       <div className="flex flex-wrap bg-white w-full">
@@ -600,37 +593,19 @@ export default function AlumnoTabs({ selectedUser, alumnoData, hideClasses = fal
                 <div className={openTab === 2 ? "block" : "hidden"} id="link2">
                   {/* No pasamos 'total' para que HistorialTable calcule su propio total desde 'pagos' */}
                   <HistorialTable pagos={historial} handlePayment={handlePayment} />
-                  {/* Si prefieres enviar un total del historial, usa la línea de abajo:
-                      <HistorialTable pagos={historial} total={totalHistorial} handlePayment={handlePayment} />
-                  */}
                 </div>
 
                 {/* CLASES: SOLO INSCRITAS POR EL ALUMNO */}
                 {!hideClasses && (
                   <div className={openTab === 3 ? "block" : "hidden"} id="link3">
                     <div className="px-4 md:px-10 mx-auto w-full">
-                      <div>
-                        <div className="flex flex-wrap">
-                          {programasInscritos.map((element, index) => (
-                            <div className="w-full lg:w-6/12 px-4 mb-2" key={index}>
-                              <ClasesCard
-                                statSubtitle={element.nombre}
-                                statTitle="Baby Dance Group A"
-                                statArrow="down"
-                                statPercent={element.mensualidad}
-                                statPercentColor="text-red-500"
-                                statDescripiron="Since last week"
-                                statIconName="fas fa-arrow-down"
-                                statIconColor="bg-red-500"
-                                // Solo las clases de este alumno (ya vienen filtradas)
-                                statSchedule={element.clases}
-                                handleDelete={handleDelete}
-                              />
-                            </div>
-                          ))}
-                          {programasInscritos.length === 0 && <p>No hay clases inscritas</p>}
-                        </div>
-                      </div>
+                      <h4 className="font-bold mb-3">Clases inscritas</h4>
+                      <AlumnoClasesInscritas
+                        alumno={{ id: selectedUser }}
+                        programas={programas}
+                        setProgramas={setProgramas}
+                        setHistorial={setHistorial}
+                      />
                     </div>
                   </div>
                 )}
