@@ -48,7 +48,7 @@ export default function ClasesCard({
                       e.stopPropagation();
                       onEdit?.(item.id_clase);
                     }}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-3 py-1 rounded shadow"
+                    className="bg-yellow-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded shadow"
                   >
                     Editar Clase
                   </button>
@@ -58,7 +58,7 @@ export default function ClasesCard({
                       e.stopPropagation();
                       onDelete?.(item.id_clase);
                     }}
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-3 py-1 rounded shadow"
+                    className="bg-yellow-500 hover:bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded shadow"
                   >
                     Borrar Clase
                   </button>

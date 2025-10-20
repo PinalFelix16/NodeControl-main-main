@@ -21,7 +21,7 @@ export default function ClasesTable({ color, maestros, status, setStatus, setVie
                   (color === "light" ? "text-blueGray-700" : "text-white")
                 }
               >
-                Lista de Clases
+                Lista de Clases hola
               </h3>
              
               <span className="mt-4 items-stretch">
@@ -36,7 +36,7 @@ export default function ClasesTable({ color, maestros, status, setStatus, setVie
                   />
               </span>
              
-              <button onClick={()=>{setView('AddUser'); setSelectedUser(null);}} className="mt-4 float-right bg-transparent border border-solid  hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200" type="button">
+              <button onClick={()=>{setView('AddUser'); setSelectedUser(null);}} className="mt-4 float-right bg-blue border border-solid  hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200" type="button">
                 <i className="fas fa-plus mr-2"></i> Agregar Clase
               </button>
 
@@ -137,10 +137,10 @@ export default function ClasesTable({ color, maestros, status, setStatus, setVie
   );
 }
 
-MaestrosTable.defaultProps = {
+ClasesTable.defaultProps = {
   color: "light",
 };
 
-MaestrosTable.propTypes = {
+ClasesTable.propTypes = {
   color: PropTypes.oneOf(["light", "dark"]),
 };

@@ -79,27 +79,29 @@ export default function AllClasesPrueba({
 
   return (
     <>
-      <div className="flex flex-wrap mt-0">
-        <div className="flex flex-wrap items-center w-full">
-          <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-            <h3 className="font-semibold text-2xl text-blueGray-700">
-              Lista de clases
-            </h3>
+      <div className="flex flex-wrap mt-4">
+      <div className="w-full mb-12 px-4">
+      <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded">
+      <div className="flex items-center justify-between">
+       <h3 className="font-semibold text-2xl text-white">
+                  Lista de Clases
+       </h3>
 
-            {!isStudent && (
-              <button
-                onClick={() => {
-                  setSelectedUser(null);
-                  setView("AddUser");
-                }}
-                className="mt-4 float-right bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200"
-                type="button"
-              >
-                <i className="fas fa-plus mr-2"></i> Agregar Clase
-              </button>
-            )}
-          </div>
-        </div>
+      {!isStudent && (
+       <button
+          onClick={() => { setSelectedUser(null); setView("AddUser"); }}
+          type="button"
+          className="bg-transparent border border-solid hover:bg-blueGray-500 hover:text-white active:bg-blueGray-600 font-bold uppercase text-sm px-6 py-3 rounded outline-none focus:outline-none ease-linear transition-all duration-150 text-blueGray-200 border-blueGray-200"
+                >
+          <i className="fas fa-arrow-left mr-2" /> Agregar Clase 
+          </button>
+
+      )}
+    </div>
+  </div>
+  
+</div>
+
 
         <div className="w-full mb-12 px-4">
           <div className="px-4 md:px-10 mx-auto w-full">
