@@ -5,9 +5,25 @@ import PropTypes from "prop-types";
 
 export default function ExpedienteTable({ color, handlePayment, total, pagos }) {
   console.log(pagos);
+
+  // ✅ Agregado: helper para mostrar el concepto correctamente
+  const conceptoLabel = (row) => {
+    const raw = (row.concepto || "").toString().toUpperCase();
+
+    // Para INSCRIPCION y RECARGO no mostramos sufijo de descuento
+    if (raw === "INSCRIPCION" || raw === "RECARGO") return raw || "INSCRIPCION";
+
+    // Busca un posible descuento en distintas claves
+    const descNum = Number(row.deduccion ?? row.descuento ?? row.desc ?? 0);
+    const descTxt = descNum > 0 ? ` (-${descNum}% Desc)` : "";
+
+    // Si no hay concepto, trátalo como MENSUALIDAD
+    const base = raw || "MENSUALIDAD";
+    return `${base}${descTxt}`;
+  };
+
   return (
     <>
-
       <div
         className={
           "relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded my-4" +
@@ -24,14 +40,10 @@ export default function ExpedienteTable({ color, handlePayment, total, pagos }) 
                 }
               >
               </h3>
-
-
-
             </div>
           </div>
         </div>
         <div className="block w-full overflow-x-auto">
-
           {/* Projects table */}
           <table className="items-center w-full bg-transparent border-collapse">
             <thead>
@@ -86,21 +98,19 @@ export default function ExpedienteTable({ color, handlePayment, total, pagos }) 
                 >
                   Fecha Limite
                 </th>
-
               </tr>
             </thead>
             <tbody>
               {pagos.map((pago, index) => (
-                <tr>
+                <tr key={index}>
                   <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                     {pago.nombre_programa}
                   </td>
                   <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {/* <i className="fas fa-circle text-emerald-500 mr-2"></i>{" "} */}
                     {pago.periodo}
-                  </td>     <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                    {/* <i className="fas fa-circle text-emerald-500 mr-2"></i>{" "} */}
-                    {pago.concepto}  {pago.deduccion !== "" ? `(-${pago.deduccion}% Desc)` : ``}
+                  </td>
+                  <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                    {conceptoLabel(pago)}
                   </td>
                   <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                     {pago.importe}
